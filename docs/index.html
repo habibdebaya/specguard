@@ -119,35 +119,30 @@ Alt/Emer Ctrl   OFF</pre>
         downBtn.disabled = currentIndex >= slides.length - 1;
       }
 
-      function scrollToSlide(index) {
+      function showSlide(index) {
         if (index < 0 || index >= slides.length) return;
-        slides[index].scrollIntoView({ behavior: 'smooth', block: 'start' });
+        slides.forEach((s, i) => {
+          s.classList.toggle('active', i === index);
+          if (i === index) s.scrollTop = 0;
+        });
         currentIndex = index;
         updateButtons();
       }
 
-      upBtn.addEventListener('click', () => scrollToSlide(currentIndex - 1));
-      downBtn.addEventListener('click', () => scrollToSlide(currentIndex + 1));
+      upBtn.addEventListener('click', () => showSlide(currentIndex - 1));
+      downBtn.addEventListener('click', () => showSlide(currentIndex + 1));
 
-      const observer = new IntersectionObserver((entries) => {
-        let best = null;
-        let bestRatio = 0;
-        for (const entry of entries) {
-          if (entry.isIntersecting && entry.intersectionRatio > bestRatio) {
-            best = entry.target;
-            bestRatio = entry.intersectionRatio;
-          }
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowDown' || e.key === 'PageDown') {
+          e.preventDefault();
+          showSlide(currentIndex + 1);
+        } else if (e.key === 'ArrowUp' || e.key === 'PageUp') {
+          e.preventDefault();
+          showSlide(currentIndex - 1);
         }
-        if (best) {
-          currentIndex = slides.indexOf(best);
-          updateButtons();
-        }
-      }, {
-        threshold: [0.25, 0.5, 0.75]
       });
 
-      slides.forEach((s) => observer.observe(s));
-      updateButtons();
+      showSlide(0);
     })();
   </script>
 </body>

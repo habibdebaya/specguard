@@ -8,29 +8,51 @@ html, body {
   -webkit-text-size-adjust: 100%;
 }
 
+html {
+  height: 100%;
+}
+
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-  background: linear-gradient(180deg, #fbf6e9 0%, #e8d8b3 50%, #c9b58a 100%);
+  background: linear-gradient(180deg, #ecf2fb 0%, #b1c8e3 50%, #7a9bbe 100%);
   background-attachment: fixed;
-  color: #1a1a1a;
+  color: #131722;
   font-size: 17px;
   line-height: 1.55;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  min-height: 100vh;
+  height: 100%;
+  overflow: hidden;
 }
 
 main {
+  position: relative;
   width: 100%;
+  height: 100vh;
+  height: 100dvh;
 }
 
 .slide {
-  min-height: 100vh;
-  min-height: 100dvh;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 4rem 1.5rem;
+  padding: 4rem 1.5rem 6rem 1.5rem;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.slide.active {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .slide-defect {
@@ -54,25 +76,25 @@ main {
 }
 
 .slide-nav button {
-  width: 44px;
-  height: 44px;
-  border: 1px solid rgba(26, 26, 26, 0.25);
-  background: rgba(255, 255, 255, 0.7);
+  width: 46px;
+  height: 46px;
+  border: 1px solid rgba(19, 23, 34, 0.3);
+  background: rgba(255, 255, 255, 0.78);
   -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #1a1a1a;
-  border-radius: 6px;
+  color: #131722;
+  border-radius: 8px;
   padding: 0;
   transition: background 0.18s ease, border-color 0.18s ease, opacity 0.18s ease;
 }
 
 .slide-nav button:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.95);
-  border-color: rgba(26, 26, 26, 0.6);
+  background: rgba(255, 255, 255, 0.96);
+  border-color: rgba(19, 23, 34, 0.7);
 }
 
 .slide-nav button:active:not(:disabled) {
@@ -80,7 +102,7 @@ main {
 }
 
 .slide-nav button:disabled {
-  opacity: 0.28;
+  opacity: 0.3;
   cursor: not-allowed;
 }
 
@@ -99,7 +121,7 @@ p:last-child {
 
 p.closing {
   margin-top: 2rem;
-  color: #555;
+  color: #2d3a52;
 }
 
 p.closing em {
@@ -109,19 +131,19 @@ p.closing em {
 p.source {
   margin-top: 3rem;
   font-size: 0.85rem;
-  color: #5a5040;
+  color: #3d4d68;
 }
 
 p.source a {
-  color: #5a5040;
+  color: #3d4d68;
   text-decoration: none;
-  border-bottom: 1px solid #a89878;
+  border-bottom: 1px solid #7e9bbb;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Courier New", monospace;
 }
 
 p.source a:hover {
-  color: #1a1a1a;
-  border-bottom-color: #1a1a1a;
+  color: #131722;
+  border-bottom-color: #131722;
 }
 
 ul.dual {
@@ -132,7 +154,7 @@ ul.dual {
 
 ul.dual li {
   padding: 0.5rem 0 0.5rem 1.2rem;
-  border-left: 2px solid #1a1a1a;
+  border-left: 2px solid #131722;
   margin-bottom: 0.6rem;
 }
 
@@ -157,14 +179,14 @@ ul.dual li strong {
 .tables img {
   width: 100%;
   height: auto;
-  border: 1px solid rgba(26, 26, 26, 0.18);
+  border: 1px solid rgba(19, 23, 34, 0.2);
   background: #fff;
   display: block;
 }
 
 .tables figcaption {
   font-size: 0.85rem;
-  color: #5a5040;
+  color: #3d4d68;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Courier New", monospace;
   letter-spacing: 0.02em;
 }
@@ -174,7 +196,7 @@ h3 {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.12em;
-  color: #6a5e48;
+  color: #4d6182;
   margin: 2rem 0 1rem 0;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Courier New", monospace;
 }
@@ -186,8 +208,8 @@ h3:first-child {
 blockquote {
   margin: 1rem 0;
   padding: 0.8rem 1rem;
-  border-left: 2px solid #1a1a1a;
-  background: rgba(255, 255, 255, 0.4);
+  border-left: 2px solid #131722;
+  background: rgba(255, 255, 255, 0.55);
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Courier New", monospace;
   font-size: 0.9rem;
   line-height: 1.5;
@@ -204,8 +226,8 @@ blockquote p:last-child {
 pre.logic {
   margin: 0.8rem 0 1.2rem 0;
   padding: 0.8rem 1rem;
-  background: rgba(255, 255, 255, 0.45);
-  border-left: 2px solid #1a1a1a;
+  background: rgba(255, 255, 255, 0.6);
+  border-left: 2px solid #131722;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Courier New", monospace;
   font-size: 0.95rem;
   line-height: 1.6;
@@ -219,7 +241,7 @@ pre.logic {
   }
 
   .slide {
-    padding: 3rem 1.25rem;
+    padding: 3rem 1.25rem 6rem 1.25rem;
   }
 
   .slide-defect {
@@ -242,8 +264,8 @@ pre.logic {
   }
 
   .slide-nav button {
-    width: 42px;
-    height: 42px;
+    width: 44px;
+    height: 44px;
   }
 }
 
