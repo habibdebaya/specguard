@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <div class="slide-counter" aria-hidden="true"><span class="current">01</span> / <span class="total">05</span></div>
   <main>
 
     <section class="slide">
@@ -94,5 +95,37 @@ Alt/Emer Ctrl   OFF</pre>
     </section>
 
   </main>
+
+  <script>
+    (function () {
+      const main = document.querySelector('main');
+      const slides = Array.from(document.querySelectorAll('.slide'));
+      const currentEl = document.querySelector('.slide-counter .current');
+      const totalEl = document.querySelector('.slide-counter .total');
+      const total = slides.length;
+
+      totalEl.textContent = String(total).padStart(2, '0');
+
+      const observer = new IntersectionObserver((entries) => {
+        let best = null;
+        let bestRatio = 0;
+        for (const entry of entries) {
+          if (entry.isIntersecting && entry.intersectionRatio > bestRatio) {
+            best = entry.target;
+            bestRatio = entry.intersectionRatio;
+          }
+        }
+        if (best) {
+          const idx = slides.indexOf(best) + 1;
+          currentEl.textContent = String(idx).padStart(2, '0');
+        }
+      }, {
+        root: main,
+        threshold: [0.25, 0.5, 0.75]
+      });
+
+      slides.forEach((s) => observer.observe(s));
+    })();
+  </script>
 </body>
 </html>
