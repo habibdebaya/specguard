@@ -43,6 +43,7 @@ main {
   -webkit-overflow-scrolling: touch;
   display: flex;
   align-items: center;
+  align-items: safe center;
   justify-content: center;
   padding: 4rem 1.5rem 6rem 1.5rem;
   opacity: 0;
