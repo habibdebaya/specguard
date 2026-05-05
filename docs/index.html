@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>specguard</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main>
+
+    <section class="slide">
+      <div class="content">
+        <p>Civil aviation runs on standards. Hundreds of pages of natural-language requirements that every aircraft system must comply with to fly.</p>
+        <p>Those standards are written by humans, reviewed by humans, and never formally verified.</p>
+        <p>If they contain logical defects, every system built to comply with them inherits the defect.</p>
+        <p class="closing"><em>specguard takes one of those standards, encodes its requirements as formal constraints, and runs generic logical checks. It finds defects without being told where to look.</em></p>
+      </div>
+    </section>
+
+    <section class="slide">
+      <div class="content">
+        <p>ARP4754B is the SAE standard governing how civil aircraft systems are developed and certified.</p>
+        <p>Published 2023. Boeing, Airbus, and COMAC all certify their aircraft against it.</p>
+        <p>172 pages long. Most of it is process guidance. Appendix E is the worked example, the development of a fictional Wheel Brake System for an aircraft designated S18.</p>
+      </div>
+    </section>
+
+    <section class="slide">
+      <div class="content">
+        <p>The S18 is a fictional aircraft. The whole appendix is a worked example, the standard's own demonstration of how its processes should be applied. The cleanest instance of safety-driven development the document contains.</p>
+        <p>Within it, two artifacts sit at the heart of the Wheel Brake System specification.</p>
+        <ul class="dual">
+          <li><strong>The safety analysis.</strong> Thirteen obligations the system must satisfy. Tables E12, E13, E14.</li>
+          <li><strong>The specification.</strong> The binding contract. Table E19.</li>
+        </ul>
+        <div class="tables">
+          <figure>
+            <img src="img/analysis.png" alt="The PSSA output tables E12, E13, E14 from page 137 of ARP4754B">
+            <figcaption>Analysis</figcaption>
+          </figure>
+          <figure>
+            <img src="img/spec.png" alt="Table E19, the WBS Requirements Specification, page 142 of ARP4754B">
+            <figcaption>Specification</figcaption>
+          </figure>
+        </div>
+        <p>The contract is supposed to enforce every obligation the analysis identified. specguard checks whether it does.</p>
+      </div>
+    </section>
+
+    <section class="slide slide-defect">
+      <div class="content">
+        <h3>In the standard's own words</h3>
+        <p>The analysis (Table E13) specifies two paired obligations.</p>
+        <blockquote>
+          <p>E13-6 says "When HYD 1 Enable output is enabled, Alt/Emer Ctrl output shall be disabled."</p>
+          <p>E13-7 says "When HYD 1 Enable output is disabled, Alt/Emer Ctrl output shall be enabled."</p>
+        </blockquote>
+        <p>Together, exactly one control path is active at any moment. Braking is always available.</p>
+        <p>The contract has only one such requirement, R-6109 in Table E19.</p>
+        <blockquote>
+          <p>"When HYD 1 Enable output is enabled, Alt/Emer Ctrl output shall be disabled."</p>
+        </blockquote>
+        <p>Half of the obligation is missing.</p>
+
+        <h3>In abstract terms</h3>
+        <p>The analysis says,</p>
+        <pre class="logic">If A, then not B.
+If not A, then B.</pre>
+        <p>The contract says only,</p>
+        <pre class="logic">If A, then not B.</pre>
+        <p>The contract is silent on the case where A is false.</p>
+
+        <h3>What that means physically</h3>
+        <p>A system built strictly to the contract can be in this state.</p>
+        <pre class="logic">HYD 1 Enable    OFF
+Alt/Emer Ctrl   OFF</pre>
+        <p>Both paths off. No braking command anywhere in the system.</p>
+        <p>The real-world consequence is loss of all braking at touchdown or during a rejected takeoff. The aircraft cannot decelerate before the runway ends.</p>
+        <p>The safety analysis explicitly forbids this state. The contract permits it.</p>
+        <p>The standard's own validation process did not catch this. specguard's entailment check finds it in milliseconds, and the witness state, the specific combination of inputs that breaks the safety claim, is constructed by Z3 from the constraints alone, with no human guidance about where to look.</p>
+      </div>
+    </section>
+
+    <section class="slide">
+      <div class="content">
+        <p>Civil aircraft certification takes years. Compliance with standards like ARP4754B costs millions per program.</p>
+        <p>Yet the standards themselves contain logical defects that pass through human review.</p>
+        <p>Symbolic verification catches them mechanically. The encoding is one-time work. The checks run in seconds.</p>
+        <p>Every certified aircraft program would benefit from running its governing standards through this kind of pipeline before signing the contract.</p>
+        <p class="closing"><em>The defect above was found by a tool that knows nothing about wheel brakes. It only knows the algebra.</em></p>
+        <p class="source"><a href="https://github.com/habibdebaya/specguard">github.com/habibdebaya/specguard</a></p>
+      </div>
+    </section>
+
+  </main>
+</body>
+</html>
