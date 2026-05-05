@@ -7,7 +7,18 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="slide-counter" aria-hidden="true"><span class="current">01</span> / <span class="total">05</span></div>
+  <nav class="slide-nav" aria-label="Slide navigation">
+    <button class="nav-up" type="button" aria-label="Previous slide" disabled>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <polyline points="18 15 12 9 6 15"></polyline>
+      </svg>
+    </button>
+    <button class="nav-down" type="button" aria-label="Next slide">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <polyline points="6 9 12 15 18 9"></polyline>
+      </svg>
+    </button>
+  </nav>
   <main>
 
     <section class="slide">
@@ -98,13 +109,25 @@ Alt/Emer Ctrl   OFF</pre>
 
   <script>
     (function () {
-      const main = document.querySelector('main');
       const slides = Array.from(document.querySelectorAll('.slide'));
-      const currentEl = document.querySelector('.slide-counter .current');
-      const totalEl = document.querySelector('.slide-counter .total');
-      const total = slides.length;
+      const upBtn = document.querySelector('.nav-up');
+      const downBtn = document.querySelector('.nav-down');
+      let currentIndex = 0;
 
-      totalEl.textContent = String(total).padStart(2, '0');
+      function updateButtons() {
+        upBtn.disabled = currentIndex <= 0;
+        downBtn.disabled = currentIndex >= slides.length - 1;
+      }
+
+      function scrollToSlide(index) {
+        if (index < 0 || index >= slides.length) return;
+        slides[index].scrollIntoView({ behavior: 'smooth', block: 'start' });
+        currentIndex = index;
+        updateButtons();
+      }
+
+      upBtn.addEventListener('click', () => scrollToSlide(currentIndex - 1));
+      downBtn.addEventListener('click', () => scrollToSlide(currentIndex + 1));
 
       const observer = new IntersectionObserver((entries) => {
         let best = null;
@@ -116,15 +139,15 @@ Alt/Emer Ctrl   OFF</pre>
           }
         }
         if (best) {
-          const idx = slides.indexOf(best) + 1;
-          currentEl.textContent = String(idx).padStart(2, '0');
+          currentIndex = slides.indexOf(best);
+          updateButtons();
         }
       }, {
-        root: main,
         threshold: [0.25, 0.5, 0.75]
       });
 
       slides.forEach((s) => observer.observe(s));
+      updateButtons();
     })();
   </script>
 </body>
