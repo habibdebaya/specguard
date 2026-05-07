@@ -91,9 +91,8 @@ If not A, then B.</pre>
         <p>A system built strictly to the contract can be in this state.</p>
         <pre class="logic">HYD 1 Enable    OFF
 Alt/Emer Ctrl   OFF</pre>
-        <p>Both paths off. No braking command anywhere in the system.</p>
-        <p>The real-world consequence is loss of all braking at touchdown or during a rejected takeoff. The aircraft cannot decelerate before the runway ends.</p>
-        <p>The safety analysis explicitly forbids this state. The contract permits it.</p>
+        <p>Both paths off. The controller is issuing no braking command on either output.</p>
+        <p>This is the state the safety analysis was authored to prevent. The contract permits it. A supplier building strictly to the contract carries no formal obligation to rule the state out.</p>
         <p>The standard's own validation process did not catch this. specguard's entailment check finds it in milliseconds, and the witness state, the specific combination of inputs that breaks the safety claim, is constructed by Z3 from the constraints alone, with no human guidance about where to look.</p>
       </div>
     </section>
