@@ -1,0 +1,679 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{breqn}
+\usepackage{enumitem}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{microtype}
+\usepackage{titlesec}
+\usepackage{parskip}
+\titleformat{\section}{\Large\bfseries\sffamily}{\thesection}{1em}{}
+\titleformat{\subsection}{\large\bfseries\sffamily}{\thesubsection}{1em}{}
+\setlength{\parindent}{0pt}
+\setlist[itemize]{topsep=4pt,itemsep=2pt,leftmargin=*}
+\title{\textsf{\textbf{\Huge specguard report}}}
+\author{\texttt{specguard/examples/arp4754b\_appendix\_e.py}}
+\date{\today}
+\begin{document}
+\maketitle
+\section{Encoded collections}
+\subsection*{\texttt{PSSA\_REQUIREMENTS}}
+\noindent\textbf{\texttt{E12-1}}\quad Airplane electrical power 1 independent from airplane electrical power 2
+\begin{dmath*}
+\neg (\text{lost\_elec\_input\_1} \wedge \text{lost\_elec\_input\_2})
+\end{dmath*}
+\noindent\textbf{\texttt{E12-2}}\quad NORMAL Mode braking function independent from ALTERNATE Mode braking function, for total loss failure condition
+\begin{dmath*}
+\neg (\text{failed\_normal\_braking} \wedge \text{failed\_alternate\_braking})
+\end{dmath*}
+\noindent\textbf{\texttt{E12-3}}\quad The NMVs and their control are independent from the SOV and its control such that no single failure results in uncommanded braking
+\begin{dmath*}
+(\text{single\_failure} \Rightarrow \neg \text{inadvertent\_braking\_takeoff})
+\end{dmath*}
+\noindent\textbf{\texttt{E13-1}}\quad The probability of BSCU failure resulting in loss of a valid braking command output to the NMV shall not exceed 2.0E-04 per flight
+\begin{dmath*}
+\text{p\_bscu\_loss\_braking\_cmd} \leq 2 \times 10^{-4}
+\end{dmath*}
+\noindent\textbf{\texttt{E13-2}}\quad The probability of BSCU failure resulting in unannunciated erroneous braking command to the NMV shall not exceed 2.0E-04 per flight
+\begin{dmath*}
+\text{p\_bscu\_erroneous\_cmd} \leq 2 \times 10^{-4}
+\end{dmath*}
+\noindent\textbf{\texttt{E13-3}}\quad The probability of BSCU failure resulting in the loss of command to open the SOV shall not exceed 2.0E-04 per flight
+\begin{dmath*}
+\text{p\_bscu\_loss\_sov\_cmd} \leq 2 \times 10^{-4}
+\end{dmath*}
+\noindent\textbf{\texttt{E13-4}}\quad The probability of BSCU failure resulting in unintended closure of the S/ASV shall not exceed 2.0E-04 per flight
+\begin{dmath*}
+\text{p\_bscu\_unintended\_sasv} \leq 2 \times 10^{-4}
+\end{dmath*}
+\noindent\textbf{\texttt{E13-5}}\quad The SOV and NMV commands shall be provided by the BSCU upon loss of either airplane electrical power input
+\begin{dmath*}
+(((\text{lost\_elec\_input\_1} \wedge \neg \text{lost\_elec\_input\_2}) \Rightarrow (\text{bscu\_provides\_sov\_cmd} \wedge \text{bscu\_provides\_nmv\_cmd})) \wedge ((\text{lost\_elec\_input\_2} \wedge \neg \text{lost\_elec\_input\_1}) \Rightarrow (\text{bscu\_provides\_sov\_cmd} \wedge \text{bscu\_provides\_nmv\_cmd})))
+\end{dmath*}
+\noindent\textbf{\texttt{E13-6}}\quad When "HYD 1 Enable" output is enabled, then "Alt/Emer Ctrl" output shall be disabled
+\begin{dmath*}
+(\text{hyd1\_enable\_on} \Rightarrow \neg \text{alt\_emer\_ctrl\_on})
+\end{dmath*}
+\noindent\textbf{\texttt{E13-7}}\quad When "HYD 1 Enable" output is disabled, then "Alt/Emer Ctrl" output shall be enabled
+\begin{dmath*}
+(\neg \text{hyd1\_enable\_on} \Rightarrow \text{alt\_emer\_ctrl\_on})
+\end{dmath*}
+\noindent\textbf{\texttt{E13-8}}\quad No single failure shall cause erroneous NMV command and inhibit the SOV function
+\begin{dmath*}
+\neg (\text{erroneous\_nmv\_cmd} \wedge \text{sov\_function\_inhibited})
+\end{dmath*}
+\noindent\textbf{\texttt{E13-9}}\quad The wheel brake command function of the BSCU shall be developed to FDAL A
+\begin{dmath*}
+\text{bscu\_cmd\_fdal\_a}
+\end{dmath*}
+\noindent\textbf{\texttt{E14-1}}\quad The probability of 'Loss of Normal Braking System Hydraulic Equipment' will be less than 3.3E-05 per flight
+\begin{dmath*}
+\text{p\_loss\_normal\_hyd\_equip} < 3.3 \times 10^{-5}
+\end{dmath*}
+\noindent\textbf{\texttt{E14-2}}\quad The probability of 'Loss of Alternate Braking System Hydraulic Equipment' will be less than 3.3E-05 per flight
+\begin{dmath*}
+\text{p\_loss\_alt\_hyd\_equip} < 3.3 \times 10^{-5}
+\end{dmath*}
+\noindent\textbf{\texttt{E14-3}}\quad The probability of 7 or more wheel speed sensors erroneous or inoperative will be less than 1.0E-07 per flight
+\begin{dmath*}
+\text{p\_seven\_or\_more\_sensors\_per\_flight} < 1 \times 10^{-7}
+\end{dmath*}
+\noindent\textbf{\texttt{E14-4}}\quad The probability of loss of an airplane electrical power bus will be less than 1.0E-04 per flight
+\begin{dmath*}
+\text{p\_loss\_elec\_bus\_per\_flight} < 1 \times 10^{-4}
+\end{dmath*}
+\noindent\textbf{\texttt{E14-5}}\quad The probability of loss of a Left brake pedal position input will be less than 1.0E-04 per flight
+\begin{dmath*}
+\text{p\_loss\_pedal\_per\_flight} < 1 \times 10^{-4}
+\end{dmath*}
+\noindent\textbf{\texttt{E14-6}}\quad Airplane electrical power bus 1 is independent from airplane electrical power bus 2
+\begin{dmath*}
+\neg (\text{lost\_elec\_input\_1} \wedge \text{lost\_elec\_input\_2})
+\end{dmath*}
+\noindent\textbf{\texttt{E14-7}}\quad HYD 1 hydraulic system is independent from HYD 2 hydraulic system
+\begin{dmath*}
+\neg (\text{failed\_hyd\_1} \wedge \text{failed\_hyd\_2})
+\end{dmath*}
+\subsection*{\texttt{ALT\_PSSA\_REQUIREMENTS}}
+\noindent\textbf{\texttt{E28-WBS-ASMP-1}}\quad The probability of 'Loss of Normal Braking System Hydraulic Equipment' will be less than 3.3E-05 per flight
+\begin{dmath*}
+\text{p\_loss\_normal\_hyd\_equip} < 3.3 \times 10^{-5}
+\end{dmath*}
+\noindent\textbf{\texttt{E28-WBS-ASMP-2}}\quad The probability of 'Loss of Alternate Braking System Hydraulic Equipment' will be less than 3.3E-05 per flight
+\begin{dmath*}
+\text{p\_loss\_alt\_hyd\_equip} < 3.3 \times 10^{-5}
+\end{dmath*}
+\noindent\textbf{\texttt{E28-WBS-ASMP-3}}\quad The probability of 7 or more wheel speed sensors erroneous or inoperative will be less than 1.0E-07 per flight
+\begin{dmath*}
+\text{p\_seven\_or\_more\_sensors\_per\_flight} < 1 \times 10^{-7}
+\end{dmath*}
+\noindent\textbf{\texttt{E28-WBS-ASMP-4}}\quad The failure rate for loss of an airplane electrical power bus will be less than 1.0E-04 per hour of flight
+\begin{dmath*}
+\text{lambda\_loss\_elec\_bus\_per\_hour} < 1 \times 10^{-4}
+\end{dmath*}
+\noindent\textbf{\texttt{E28-WBS-ASMP-5}}\quad The failure rate for loss of a left brake pedal position input will be less than 1.0E-04 per hour of flight
+\begin{dmath*}
+\text{lambda\_loss\_pedal\_per\_hour} < 1 \times 10^{-4}
+\end{dmath*}
+\noindent\textbf{\texttt{E28-WBS-ASMP-6}}\quad Airplane electrical power bus 1 is independent from airplane electrical power bus 2
+\begin{dmath*}
+\neg (\text{lost\_elec\_input\_1} \wedge \text{lost\_elec\_input\_2})
+\end{dmath*}
+\noindent\textbf{\texttt{E28-WBS-ASMP-7}}\quad HYD 1 hydraulic system is independent from HYD 2 hydraulic system
+\begin{dmath*}
+\neg (\text{failed\_hyd\_1} \wedge \text{failed\_hyd\_2})
+\end{dmath*}
+\subsection*{\texttt{SPEC\_REQUIREMENTS}}
+\noindent\textbf{\texttt{S18-WBS-R-0020}}\quad The Wheel Brake System shall have a means to decelerate the wheels on the ground
+\begin{dmath*}
+\text{wbs\_has\_decelerate\_means}
+\end{dmath*}
+\noindent\textbf{\texttt{S18-WBS-R-0021}}\quad The Wheel Brake System shall be capable of decelerating the S18 airplane to a complete stop/to taxi speed in 2000 feet when wheel brakes, high lift speed brakes and reverse thrust are available, including when at maximum landing weight
+\begin{dmath*}
+\text{stopping\_distance\_ft} \leq 2000
+\end{dmath*}
+\noindent\textbf{\texttt{S18-WBS-R-0041}}\quad The Wheel Brake System shall provide directional control on ground by a differential braking function
+\begin{dmath*}
+\text{wbs\_differential\_braking}
+\end{dmath*}
+\noindent\textbf{\texttt{S18-WBS-R-0042}}\quad The Wheel Brake System shall provide a parking brake to prevent airplane motion on the ground
+\begin{dmath*}
+\text{wbs\_parking\_brake}
+\end{dmath*}
+\noindent\textbf{\texttt{S18-WBS-R-0043}}\quad The Wheel Brake System shall provide autobraking capability during landing and RTO
+\begin{dmath*}
+\text{wbs\_autobraking}
+\end{dmath*}
+\noindent\textbf{\texttt{S18-WBS-R-0044}}\quad The Wheel Brake System shall provide anti-skid braking
+\begin{dmath*}
+\text{wbs\_antiskid}
+\end{dmath*}
+\noindent\textbf{\texttt{S18-WBS-R-0045}}\quad The Wheel Brake System shall provide hydraulic brake control
+\begin{dmath*}
+\text{wbs\_hyd\_brake\_control}
+\end{dmath*}
+\noindent\textbf{\texttt{S18-WBS-R-0046}}\quad The Wheel Brake System shall override the autobrake when the commanded by the flight crew
+\begin{dmath*}
+\text{wbs\_overrides\_autobrake\_on\_crew}
+\end{dmath*}
+\noindent\textbf{\texttt{S18-WBS-R-0047}}\quad The Wheel Brake System shall meet safety requirements while operating in an average atmospheric radiation environment per the IEC 62396 standard with an altitude of 40000 feet and a latitude of 45 degrees
+\begin{dmath*}
+\text{wbs\_radiation\_qualified}
+\end{dmath*}
+\noindent\textbf{\texttt{S18-WBS-R-0049}}\quad The Wheel Brake System shall be controlled and monitored by a computer system called Brake System Control Unit
+\begin{dmath*}
+\text{wbs\_controlled\_by\_bscu}
+\end{dmath*}
+\noindent\textbf{\texttt{S18-WBS-R-0050}}\quad Each wheel brake shall have separate hydraulic power supply lines
+\begin{dmath*}
+\text{each\_wheel\_separate\_hyd\_lines}
+\end{dmath*}
+\noindent\textbf{\texttt{S18-WBS-R-0052}}\quad Each hydraulic Wheel Brake System circuit shall have meter valves, anti-skid valves and hydraulic fuses
+\begin{dmath*}
+\text{each\_circuit\_valves\_fuses}
+\end{dmath*}
+\noindent\textbf{\texttt{S18-WBS-R-0055}}\quad Anti-skid system shall be capable to prevent skidding of the tires by reducing the pressure applied to the brakes
+\begin{dmath*}
+\text{antiskid\_prevents\_skidding}
+\end{dmath*}
+\noindent\textbf{\texttt{S18-WBS-R-0062}}\quad The Wheel Brake System shall include an emergency accumulator to supply hydraulic power to the wheel brakes
+\begin{dmath*}
+\text{has\_emergency\_accumulator}
+\end{dmath*}
+\noindent\textbf{\texttt{S18-WBS-R-0065}}\quad The emergency accumulator shall provide a minimum of 1800 psi
+\begin{dmath*}
+\text{accumulator\_pressure\_psi} \geq 1800
+\end{dmath*}
+\noindent\textbf{\texttt{S18-WBS-R-0066}}\quad The Alternate/Emergency Brake System hydraulic equipment and piping shall be installed aft of the engine 1 UERF trajectory envelope
+\begin{dmath*}
+\text{alt\_emer\_aft\_of\_uerf}
+\end{dmath*}
+\noindent\textbf{\texttt{S18-WBS-R-0100}}\quad The Wheel Brake System decelerate the wheels on the ground function shall be developed as FDAL A
+\begin{dmath*}
+\text{wbs\_decelerate\_fdal\_a}
+\end{dmath*}
+\noindent\textbf{\texttt{S18-WBS-R-0120}}\quad No single failure or event shall cause the complete loss of hydraulic power for both the WBS Normal and Alternate/Emergency Brake Systems
+\begin{dmath*}
+\neg (\text{failed\_normal\_braking} \wedge \text{failed\_alternate\_braking})
+\end{dmath*}
+\noindent\textbf{\texttt{S18-WBS-R-0130}}\quad No single failure or event shall cause the complete loss of electrical power for both the WBS Normal and Alternate/Emergency Brake Systems
+\begin{dmath*}
+\neg (\text{lost\_elec\_input\_1} \wedge \text{lost\_elec\_input\_2})
+\end{dmath*}
+\noindent\textbf{\texttt{S18-WBS-R-0150}}\quad Complete loss of decelerate the wheels on the ground function shall be less probable than 1.0E-07 for a landing
+\begin{dmath*}
+\text{p\_total\_loss\_decelerate} < 1 \times 10^{-7}
+\end{dmath*}
+\noindent\textbf{\texttt{S18-WBS-R-0200}}\quad Two redundant control lanes shall be provided between the EBU and each of the two Alternate/Emergency Meter Valves
+\begin{dmath*}
+\text{ebu\_two\_redundant\_lanes}
+\end{dmath*}
+\noindent\textbf{\texttt{S18-WBS-R-0326}}\quad No single failure shall result in inadvertent wheel braking of all wheels during takeoff roll
+\begin{dmath*}
+(\text{single\_failure} \Rightarrow \neg \text{inadvertent\_braking\_takeoff})
+\end{dmath*}
+\noindent\textbf{\texttt{S18-WBS-R-0508}}\quad The Wheel Brake System shall have at least two independent hydraulic pressure sources
+\begin{dmath*}
+\text{wbs\_two\_independent\_hyd\_sources}
+\end{dmath*}
+\noindent\textbf{\texttt{S18-WBS-R-0509}}\quad The Wheel Brake System shall have dual BSCU command functions
+\begin{dmath*}
+\text{wbs\_dual\_bscu\_cmd}
+\end{dmath*}
+\noindent\textbf{\texttt{S18-WBS-R-0510}}\quad The rudder and nose wheel steering functions shall not be implemented by the Wheel Brake System
+\begin{dmath*}
+\text{wbs\_no\_rudder\_or\_nws}
+\end{dmath*}
+\noindent\textbf{\texttt{S18-WBS-R-0631}}\quad The Wheel Brake System shall indicate individual brake temperature
+\begin{dmath*}
+\text{wbs\_indicates\_brake\_temp}
+\end{dmath*}
+\noindent\textbf{\texttt{S18-WBS-R-0632}}\quad The Wheel Brake System shall control individual brake pressure
+\begin{dmath*}
+\text{wbs\_individual\_brake\_pressure}
+\end{dmath*}
+\noindent\textbf{\texttt{S18-WBS-ICD-1002}}\quad The brake actuators shall respond to a BSCU command within 5 ms of receiving it
+\begin{dmath*}
+\text{actuator\_response\_time\_ms} \leq 5
+\end{dmath*}
+\noindent\textbf{\texttt{S18-WBS-R-1613}}\quad Hydraulic pressure shall be controlled for weight, autobrake mode, ground speed, wheel rotation, brake temperature and deceleration rate in accordance with graphs given in S18 brake force analysis AAS18-XXX
+\begin{dmath*}
+\text{hyd\_pressure\_per\_analysis}
+\end{dmath*}
+\noindent\textbf{\texttt{S18-WBS-R-2971}}\quad Wheel Brake System shall have one NORMAL operating mode
+\begin{dmath*}
+\text{wbs\_one\_normal\_mode}
+\end{dmath*}
+\noindent\textbf{\texttt{S18-WBS-R-2972}}\quad Wheel Brake System shall have one ALTERNATE operating mode
+\begin{dmath*}
+\text{wbs\_one\_alternate\_mode}
+\end{dmath*}
+\noindent\textbf{\texttt{S18-WBS-R-2973}}\quad Operation of the Alternate/Emergency Brake System shall be precluded when the Normal Brake System is in use
+\begin{dmath*}
+(\text{normal\_mode\_active} \Rightarrow \neg \text{alternate\_mode\_active})
+\end{dmath*}
+\noindent\textbf{\texttt{S18-WBS-R-2974}}\quad An emergency accumulator shall provide hydraulic power for EMERGENCY Wheel Brake System operating mode
+\begin{dmath*}
+\text{accumulator\_powers\_emergency}
+\end{dmath*}
+\noindent\textbf{\texttt{S18-WBS-R-2975}}\quad The emergency accumulator shall be attached to the HYD 2 hydraulic line between the Selector Valve and the Alternate/Emergency Meter Valve
+\begin{dmath*}
+\text{accumulator\_attached\_to\_hyd2}
+\end{dmath*}
+\noindent\textbf{\texttt{S18-WBS-R-2986}}\quad The wheel brake command function of the BSCU shall be developed as FDAL A
+\begin{dmath*}
+\text{bscu\_cmd\_fdal\_a}
+\end{dmath*}
+\noindent\textbf{\texttt{S18-WBS-R-2997}}\quad The BSCU shall have two independent command channels
+\begin{dmath*}
+\text{bscu\_two\_independent\_channels}
+\end{dmath*}
+\noindent\textbf{\texttt{S18-WBS-R-2999}}\quad The BSCU shall have two independent electrical power sources
+\begin{dmath*}
+\text{bscu\_two\_independent\_power}
+\end{dmath*}
+\noindent\textbf{\texttt{S18-WBS-R-3011}}\quad Brake pedals shall be independent from the rudder control
+\begin{dmath*}
+\text{brake\_pedals\_indep\_rudder}
+\end{dmath*}
+\noindent\textbf{\texttt{S18-WBS-R-3213}}\quad Normal Brake System shall be powered from the airplane's HYD 1 hydraulic system
+\begin{dmath*}
+(\text{failed\_hyd\_1} \Rightarrow \text{failed\_normal\_braking})
+\end{dmath*}
+\noindent\textbf{\texttt{S18-WBS-R-3224}}\quad Alternate/Emergency Brake System shall be powered from the airplane's HYD 2 hydraulic system
+\begin{dmath*}
+(\text{failed\_hyd\_2} \Rightarrow \text{failed\_alternate\_braking})
+\end{dmath*}
+\noindent\textbf{\texttt{S18-WBS-R-3245}}\quad ALTERNATE Mode shall be automatically selected when the NORMAL Mode fails
+\begin{dmath*}
+(\text{normal\_mode\_failed} \Rightarrow \text{alternate\_mode\_active})
+\end{dmath*}
+\noindent\textbf{\texttt{S18-WBS-R-6104}}\quad The probability of BSCU failure resulting in loss of a valid braking command output to the NMV shall not exceed 2.0E-04 per flight
+\begin{dmath*}
+\text{p\_bscu\_loss\_braking\_cmd} \leq 2 \times 10^{-4}
+\end{dmath*}
+\noindent\textbf{\texttt{S18-WBS-R-6105}}\quad The probability of BSCU failure resulting in unannunciated erroneous braking command to the NMV shall not exceed 2.0E-04 per flight
+\begin{dmath*}
+\text{p\_bscu\_erroneous\_cmd} \leq 2 \times 10^{-4}
+\end{dmath*}
+\noindent\textbf{\texttt{S18-WBS-R-6106}}\quad The probability of BSCU failure resulting in the loss of command to open the SOV shall not exceed 2.0E-04 per flight
+\begin{dmath*}
+\text{p\_bscu\_loss\_sov\_cmd} \leq 2 \times 10^{-4}
+\end{dmath*}
+\noindent\textbf{\texttt{S18-WBS-R-6107}}\quad The probability of BSCU failure resulting in unintended closure of the S/ASV shall not exceed 2.0E-04 per flight
+\begin{dmath*}
+\text{p\_bscu\_unintended\_sasv} \leq 2 \times 10^{-4}
+\end{dmath*}
+\noindent\textbf{\texttt{S18-WBS-R-6108}}\quad The SOV and NMV commands shall be provided by the BSCU upon loss of either airplane electrical power input
+\begin{dmath*}
+(((\text{lost\_elec\_input\_1} \wedge \neg \text{lost\_elec\_input\_2}) \Rightarrow (\text{bscu\_provides\_sov\_cmd} \wedge \text{bscu\_provides\_nmv\_cmd})) \wedge ((\text{lost\_elec\_input\_2} \wedge \neg \text{lost\_elec\_input\_1}) \Rightarrow (\text{bscu\_provides\_sov\_cmd} \wedge \text{bscu\_provides\_nmv\_cmd})))
+\end{dmath*}
+\noindent\textbf{\texttt{S18-WBS-R-6109}}\quad When "HYD 1 Enable" output is enabled, then "Alt/Emer Ctrl" output shall be disabled
+\begin{dmath*}
+(\text{hyd1\_enable\_on} \Rightarrow \neg \text{alt\_emer\_ctrl\_on})
+\end{dmath*}
+\noindent\textbf{\texttt{S18-WBS-R-6110}}\quad No single failure shall cause erroneous NMV command and inhibit the SOV function
+\begin{dmath*}
+\neg (\text{erroneous\_nmv\_cmd} \wedge \text{sov\_function\_inhibited})
+\end{dmath*}
+\noindent\textbf{\texttt{S18-WBS-R-6111}}\quad The probability of 'Loss of Normal Brake System Hydraulic Components' shall be less than 3.3E-05 per flight
+\begin{dmath*}
+\text{p\_loss\_normal\_hyd\_equip} < 3.3 \times 10^{-5}
+\end{dmath*}
+\noindent\textbf{\texttt{S18-WBS-R-6112}}\quad The probability of 'Loss of Alternate/Emergency Brake System Hydraulic Components' shall be less than 3.3E-05 per flight
+\begin{dmath*}
+\text{p\_loss\_alt\_hyd\_equip} < 3.3 \times 10^{-5}
+\end{dmath*}
+\subsection*{\texttt{BSCU\_PSSA\_REQUIREMENTS}}
+\noindent\textbf{\texttt{BSCU-001}}\quad Channel \#1 shall have physical independence from Channel \#2
+\begin{dmath*}
+\text{channel1\_phys\_indep\_channel2}
+\end{dmath*}
+\noindent\textbf{\texttt{BSCU-002}}\quad Within each channel, the command function shall have physical independence from the monitor function
+\begin{dmath*}
+\text{cmd\_phys\_indep\_monitor}
+\end{dmath*}
+\noindent\textbf{\texttt{BSCU-003}}\quad The COMX software and MONX software shall be developed using different software requirement specifications
+\begin{dmath*}
+\text{comx\_monx\_diff\_specs}
+\end{dmath*}
+\noindent\textbf{\texttt{BSCU-004}}\quad Within each channel, a power supply monitor shall shutoff the power supply when any voltage is detected to be out of specification
+\begin{dmath*}
+(\text{voltage\_out\_of\_spec} \Rightarrow \text{power\_supply\_shutoff})
+\end{dmath*}
+\noindent\textbf{\texttt{BSCU-005}}\quad Within each channel, the operational state of the power supply shall have no effect on the operational state of the power supply monitor
+\begin{dmath*}
+\text{power\_supply\_state\_indep\_monitor}
+\end{dmath*}
+\noindent\textbf{\texttt{BSCU-006}}\quad Upon Channel \#1 indicating an 'invalid' state, Channel \#2 shall command the 'Normal Control' output
+\begin{dmath*}
+(\text{channel1\_invalid} \Rightarrow \text{channel2\_cmd\_normal\_ctrl})
+\end{dmath*}
+\noindent\textbf{\texttt{BSCU-007}}\quad Upon both Channel \#1 and Channel \#2 indicating 'invalid' states, the 'HYD 1 Enable' output shall be disabled
+\begin{dmath*}
+((\text{channel1\_invalid} \wedge \text{channel2\_invalid}) \Rightarrow \neg \text{hyd1\_enable\_on})
+\end{dmath*}
+\noindent\textbf{\texttt{BSCU-008}}\quad Upon either Channel \#1 or Channel \#2 indicating a validity error, a WBS annunciation shall be output from the BSCU
+\begin{dmath*}
+((\text{channel1\_invalid} \vee \text{channel2\_invalid}) \Rightarrow \text{wbs\_annunciation\_out})
+\end{dmath*}
+\noindent\textbf{\texttt{BSCU-009}}\quad At power-up the BSCU shall perform a self-test of Channel \#2 including the ability to switch control from Channel \#1 to Channel \#2
+\begin{dmath*}
+\text{power\_up\_self\_tests\_ch2}
+\end{dmath*}
+\noindent\textbf{\texttt{BSCU-010}}\quad At power-up each channel of the BSCU shall implement a test of its power supply monitor
+\begin{dmath*}
+\text{power\_up\_tests\_psm}
+\end{dmath*}
+\noindent\textbf{\texttt{BSCU-011}}\quad If the power-up test fails, a WBS annunciation shall be output from the BSCU
+\begin{dmath*}
+(\text{power\_up\_test\_failed} \Rightarrow \text{wbs\_annunciation\_out})
+\end{dmath*}
+\subsection*{\texttt{BSCU\_ASSUMPTIONS\_TO\_WBS}}
+\noindent\textbf{\texttt{E23-1}}\quad When 'HYD 1 Enable' is disabled, the BSCU brake control outputs are not used
+\begin{dmath*}
+(\neg \text{hyd1\_enable\_on} \Rightarrow \neg \text{bscu\_brake\_outputs\_in\_use})
+\end{dmath*}
+\noindent\textbf{\texttt{E23-2}}\quad A BSCU maintenance action will be initiated, if the WBS Status indicates a failure
+\begin{dmath*}
+(\text{wbs\_status\_failure} \Rightarrow \text{bscu\_maintenance\_initiated})
+\end{dmath*}
+\subsection*{\texttt{BSCU\_SPEC\_REQUIREMENTS}}
+\noindent\textbf{\texttt{S18-BSCU-R-0001}}\quad The wheel brake command function of the BSCU shall be developed as FDAL A
+\begin{dmath*}
+\text{bscu\_cmd\_fdal\_a}
+\end{dmath*}
+\noindent\textbf{\texttt{S18-BSCU-R-0002}}\quad The probability of BSCU failure resulting in loss of a valid braking command output to the NMV shall not exceed 2.0E-04 per flight
+\begin{dmath*}
+\text{p\_bscu\_loss\_braking\_cmd} \leq 2 \times 10^{-4}
+\end{dmath*}
+\noindent\textbf{\texttt{S18-BSCU-R-0003}}\quad The probability of BSCU failure resulting in unannunciated erroneous braking command to the NMV shall not exceed 2.0E-04 per flight
+\begin{dmath*}
+\text{p\_bscu\_erroneous\_cmd} \leq 2 \times 10^{-4}
+\end{dmath*}
+\noindent\textbf{\texttt{S18-BSCU-R-0004}}\quad The probability of BSCU failure resulting in the loss of command to open the SOV shall not exceed 2.0E-04 per flight
+\begin{dmath*}
+\text{p\_bscu\_loss\_sov\_cmd} \leq 2 \times 10^{-4}
+\end{dmath*}
+\noindent\textbf{\texttt{S18-BSCU-R-0005}}\quad The probability of BSCU failure resulting in unintended closure of the S/ASV shall not exceed 2.0E-04 per flight
+\begin{dmath*}
+\text{p\_bscu\_unintended\_sasv} \leq 2 \times 10^{-4}
+\end{dmath*}
+\noindent\textbf{\texttt{S18-BSCU-R-0006}}\quad The SOV and NMV commands shall be provided by the BSCU upon loss of either airplane electrical power input
+\begin{dmath*}
+(((\text{lost\_elec\_input\_1} \wedge \neg \text{lost\_elec\_input\_2}) \Rightarrow (\text{bscu\_provides\_sov\_cmd} \wedge \text{bscu\_provides\_nmv\_cmd})) \wedge ((\text{lost\_elec\_input\_2} \wedge \neg \text{lost\_elec\_input\_1}) \Rightarrow (\text{bscu\_provides\_sov\_cmd} \wedge \text{bscu\_provides\_nmv\_cmd})))
+\end{dmath*}
+\noindent\textbf{\texttt{S18-BSCU-R-0007}}\quad When "HYD 1 Enable" output is enabled, then "Alt/Emer Ctrl" output shall be disabled
+\begin{dmath*}
+(\text{hyd1\_enable\_on} \Rightarrow \neg \text{alt\_emer\_ctrl\_on})
+\end{dmath*}
+\noindent\textbf{\texttt{S18-BSCU-R-0008}}\quad No single failure shall cause erroneous NMV command and inhibit the SOV function
+\begin{dmath*}
+\neg (\text{erroneous\_nmv\_cmd} \wedge \text{sov\_function\_inhibited})
+\end{dmath*}
+\noindent\textbf{\texttt{S18-BSCU-R-0009}}\quad When 'HYD 1 Enable' is disabled, the BSCU brake control outputs shall be disabled
+\begin{dmath*}
+(\neg \text{hyd1\_enable\_on} \Rightarrow \neg \text{bscu\_brake\_outputs\_in\_use})
+\end{dmath*}
+\noindent\textbf{\texttt{S18-BSCU-R-0010}}\quad BSCU shall calculate the required hydraulic pressure as a function of weight, autobrake mode, ground speed, wheel rotation, brake temperature and deceleration rate in accordance with graphs given in S18 brake force analysis AAS18-XXX
+\begin{dmath*}
+\text{hyd\_pressure\_per\_analysis}
+\end{dmath*}
+\noindent\textbf{\texttt{S18-BSCU-R-0011}}\quad BSCU shall control the meter valves
+\begin{dmath*}
+\text{bscu\_controls\_meter\_valves}
+\end{dmath*}
+\noindent\textbf{\texttt{S18-BSCU-R-0012}}\quad BSCU shall control the anti-skid valves
+\begin{dmath*}
+\text{bscu\_controls\_antiskid\_valves}
+\end{dmath*}
+\noindent\textbf{\texttt{S18-BSCU-R-0013}}\quad BSCU shall control the shut off valves
+\begin{dmath*}
+\text{bscu\_controls\_shutoff\_valves}
+\end{dmath*}
+\noindent\textbf{\texttt{S18-BSCU-R-0027}}\quad Each BSCU shall have two command channels
+\begin{dmath*}
+\text{bscu\_each\_two\_command\_channels}
+\end{dmath*}
+\noindent\textbf{\texttt{S18-BSCU-R-0051}}\quad Each BSCU channel shall have a monitoring unit
+\begin{dmath*}
+\text{bscu\_each\_channel\_has\_monitoring}
+\end{dmath*}
+\noindent\textbf{\texttt{S18-BSCU-R-0075}}\quad Each BSCU channel shall have a control unit
+\begin{dmath*}
+\text{bscu\_each\_channel\_has\_control}
+\end{dmath*}
+\noindent\textbf{\texttt{S18-BSCU-R-0099}}\quad Each BSCU channel shall have independent power
+\begin{dmath*}
+\text{bscu\_each\_channel\_indep\_power}
+\end{dmath*}
+\noindent\textbf{\texttt{S18-BSCU-R-0123}}\quad Each BSCU channel shall have independent pedal input to both control and monitoring units
+\begin{dmath*}
+\text{bscu\_each\_channel\_indep\_pedal}
+\end{dmath*}
+\noindent\textbf{\texttt{S18-BSCU-R-0124}}\quad The command channels of each BSCU shall be independent of each other
+\begin{dmath*}
+\text{bscu\_command\_channels\_indep}
+\end{dmath*}
+\noindent\textbf{\texttt{S18-BSCU-R-0126}}\quad The BSCU hardware shall be developed to IDAL A
+\begin{dmath*}
+\text{bscu\_hw\_idal\_a}
+\end{dmath*}
+\noindent\textbf{\texttt{S18-BSCU-R-0127}}\quad The BSCU software shall be developed to IDAL B
+\begin{dmath*}
+\text{bscu\_sw\_idal\_b}
+\end{dmath*}
+\noindent\textbf{\texttt{S18-BSCU-R-0128}}\quad BSCU shall meet safety requirements while operating in an average atmospheric radiation environment per the IEC 62396 standard with an altitude of 40000 feet and a latitude of 45 degrees
+\begin{dmath*}
+\text{bscu\_radiation\_qualified}
+\end{dmath*}
+\noindent\textbf{\texttt{S18-BSCU-R-0201}}\quad Channel \#1 shall have physical independence from Channel \#2
+\begin{dmath*}
+\text{channel1\_phys\_indep\_channel2}
+\end{dmath*}
+\noindent\textbf{\texttt{S18-BSCU-R-0202}}\quad Within each channel, the command function shall have physical independence from the monitor function
+\begin{dmath*}
+\text{cmd\_phys\_indep\_monitor}
+\end{dmath*}
+\noindent\textbf{\texttt{S18-BSCU-R-0203}}\quad The COMX software and MONX software shall be developed using different software requirement specifications
+\begin{dmath*}
+\text{comx\_monx\_diff\_specs}
+\end{dmath*}
+\noindent\textbf{\texttt{S18-BSCU-R-0204}}\quad Within each channel, a power supply monitor shall shutoff the power supply when any voltage is detected to be out of specification
+\begin{dmath*}
+(\text{voltage\_out\_of\_spec} \Rightarrow \text{power\_supply\_shutoff})
+\end{dmath*}
+\noindent\textbf{\texttt{S18-BSCU-R-0205}}\quad Within each channel, the operational state of the power supply shall have no effect on the operational state of the power supply monitor
+\begin{dmath*}
+\text{power\_supply\_state\_indep\_monitor}
+\end{dmath*}
+\noindent\textbf{\texttt{S18-BSCU-R-0206}}\quad Upon Channel \#1 indicating an 'invalid' state, Channel \#2 shall command the 'Normal Control' output
+\begin{dmath*}
+(\text{channel1\_invalid} \Rightarrow \text{channel2\_cmd\_normal\_ctrl})
+\end{dmath*}
+\noindent\textbf{\texttt{S18-BSCU-R-0207}}\quad Upon both Channel \#1 and Channel \#2 indicating 'invalid' states, the 'HYD 1 Enable' output shall be disabled
+\begin{dmath*}
+((\text{channel1\_invalid} \wedge \text{channel2\_invalid}) \Rightarrow \neg \text{hyd1\_enable\_on})
+\end{dmath*}
+\noindent\textbf{\texttt{S18-BSCU-R-0208}}\quad Upon either Channel \#1 or Channel \#2 indicating a validity error, a WBS annunciation shall be output from the BSCU
+\begin{dmath*}
+((\text{channel1\_invalid} \vee \text{channel2\_invalid}) \Rightarrow \text{wbs\_annunciation\_out})
+\end{dmath*}
+\noindent\textbf{\texttt{S18-BSCU-R-0209}}\quad At power-up, the BSCU shall perform a self-test of Channel \#2 including the ability to switch control from Channel \#1 to Channel \#2
+\begin{dmath*}
+\text{power\_up\_self\_tests\_ch2}
+\end{dmath*}
+\noindent\textbf{\texttt{S18-BSCU-R-0210}}\quad At power-up, each channel of the BSCU shall implement a test of its power supply monitor
+\begin{dmath*}
+\text{power\_up\_tests\_psm}
+\end{dmath*}
+\noindent\textbf{\texttt{S18-BSCU-R-0211}}\quad If the power-up test fails, a WBS annunciation shall be output from the BSCU
+\begin{dmath*}
+(\text{power\_up\_test\_failed} \Rightarrow \text{wbs\_annunciation\_out})
+\end{dmath*}
+\subsection*{\texttt{AIRPLANE\_REQUIREMENTS}}
+\noindent\textbf{\texttt{S18-ACFT-R-1000}}\quad The S18 airplane shall have a means to decelerate on ground
+\begin{dmath*}
+\text{airplane\_decelerate\_on\_ground}
+\end{dmath*}
+\noindent\textbf{\texttt{S18-ACFT-R-1100}}\quad The S18 airplane shall have a means to decelerate the wheels on the ground
+\begin{dmath*}
+\text{airplane\_decelerate\_wheels\_on\_ground}
+\end{dmath*}
+\noindent\textbf{\texttt{S18-ACFT-R-1110}}\quad The S18 airplane shall have pilot-controlled wheel braking capability
+\begin{dmath*}
+\text{airplane\_pilot\_controlled\_braking}
+\end{dmath*}
+\noindent\textbf{\texttt{S18-ACFT-R-1120}}\quad The S18 airplane shall have an autobraking capability during landing and RTO
+\begin{dmath*}
+\text{airplane\_autobraking}
+\end{dmath*}
+\noindent\textbf{\texttt{S18-ACFT-R-1130}}\quad The S18 airplane shall have anti-skid braking
+\begin{dmath*}
+\text{airplane\_antiskid}
+\end{dmath*}
+\noindent\textbf{\texttt{S18-ACFT-R-1140}}\quad The S18 airplane shall provide interface for Wheel Brake System status and annunciations
+\begin{dmath*}
+\text{airplane\_wbs\_status\_interface}
+\end{dmath*}
+\noindent\textbf{\texttt{S18-ACFT-R-0181}}\quad The S18 airplane shall decelerate the wheels on gear retraction
+\begin{dmath*}
+\text{airplane\_decelerate\_wheels\_on\_gear\_retract}
+\end{dmath*}
+\noindent\textbf{\texttt{S18-ACFT-R-0182}}\quad The S18 airplane shall be capable of decelerating the wheels differentially
+\begin{dmath*}
+\text{airplane\_decelerate\_differentially}
+\end{dmath*}
+\noindent\textbf{\texttt{S18-ACFT-R-0183}}\quad The S18 airplane shall have a parking brake to prevent airplane motion when parked
+\begin{dmath*}
+\text{airplane\_parking\_brake}
+\end{dmath*}
+\noindent\textbf{\texttt{S18-ACFT-R-0184}}\quad The S18 airplane shall have hydraulically driven braking
+\begin{dmath*}
+\text{airplane\_hydraulic\_braking}
+\end{dmath*}
+\noindent\textbf{\texttt{S18-ACFT-R-0185}}\quad The S18 airplane shall have an autobrake override that can be initiated by the flight crew
+\begin{dmath*}
+\text{airplane\_autobrake\_override}
+\end{dmath*}
+\noindent\textbf{\texttt{S18-ACFT-R-0186}}\quad The S18 airplane shall meet safety requirements while operating in an average atmospheric radiation environment per the IEC 62396 standard with an altitude of 40000 feet and a latitude of 45 degrees
+\begin{dmath*}
+\text{airplane\_radiation\_qualified}
+\end{dmath*}
+\noindent\textbf{\texttt{S18-ACFT-R-0933}}\quad The Wheel Brake System decelerate the wheels on the ground function shall be developed as FDAL A
+\begin{dmath*}
+\text{airplane\_decelerate\_function\_fdal\_a}
+\end{dmath*}
+\noindent\textbf{\texttt{S18-ACFT-R-1322}}\quad No single failure or event shall result in the complete loss of wheel brake and the loss of one thrust reverser
+\begin{dmath*}
+\neg (\text{complete\_loss\_wheel\_brake} \wedge \text{loss\_one\_thrust\_reverser})
+\end{dmath*}
+\noindent\textbf{\texttt{S18-ACFT-R-1385}}\quad Complete loss of wheel braking shall be less than 1.0E-07 for a landing
+\begin{dmath*}
+\text{p\_complete\_loss\_wheel\_braking\_per\_landing} < 1 \times 10^{-7}
+\end{dmath*}
+\noindent\textbf{\texttt{S18-ACFT-R-1550}}\quad Loss of power from both hydraulic subsystems powered by the engines shall not lead to complete loss of wheel braking
+\begin{dmath*}
+(\text{both\_engine\_hyd\_failed} \Rightarrow \neg \text{complete\_loss\_wheel\_brake})
+\end{dmath*}
+\noindent\textbf{\texttt{S18-ACFT-R-1551}}\quad Wheel Brake System shall include an emergency accumulator to supply hydraulic power to the wheel brakes
+\begin{dmath*}
+\text{airplane\_has\_emergency\_accumulator}
+\end{dmath*}
+\noindent\textbf{\texttt{S18-ACFT-R-1552}}\quad The Alternate/Emergency Brake System hydraulic equipment and piping shall be installed aft of the engine 1 UERF trajectory envelope
+\begin{dmath*}
+\text{alt\_emer\_aft\_of\_uerf}
+\end{dmath*}
+\noindent\textbf{\texttt{S18-ACFT-R-1600}}\quad Two redundant control lanes shall be provided between the Electric Brake Unit (EBU) and each of the two Alternate/Emergency Meter Valves
+\begin{dmath*}
+\text{ebu\_two\_redundant\_lanes}
+\end{dmath*}
+\section{Axioms}
+\begin{dmath*}
+\text{flight\_duration\_hours} = 5
+\end{dmath*}
+\begin{dmath*}
+\text{p\_loss\_elec\_bus\_per\_flight} = \text{lambda\_loss\_elec\_bus\_per\_hour} \cdot \text{flight\_duration\_hours}
+\end{dmath*}
+\begin{dmath*}
+\text{p\_loss\_pedal\_per\_flight} = \text{lambda\_loss\_pedal\_per\_hour} \cdot \text{flight\_duration\_hours}
+\end{dmath*}
+\section{Internal consistency}
+\begin{itemize}
+\item \texttt{PSSA\_REQUIREMENTS}: \textsc{sat}
+\item \texttt{ALT\_PSSA\_REQUIREMENTS}: \textsc{sat}
+\item \texttt{SPEC\_REQUIREMENTS}: \textsc{sat}
+\item \texttt{BSCU\_PSSA\_REQUIREMENTS}: \textsc{sat}
+\item \texttt{BSCU\_ASSUMPTIONS\_TO\_WBS}: \textsc{sat}
+\item \texttt{BSCU\_SPEC\_REQUIREMENTS}: \textsc{sat}
+\item \texttt{AIRPLANE\_REQUIREMENTS}: \textsc{sat}
+\end{itemize}
+\section{Directional entailment}
+\subsection*{\texttt{SPEC\_REQUIREMENTS} entails each \texttt{PSSA\_REQUIREMENTS}}
+\begin{itemize}
+\item \textbf{\texttt{E12-1}}: PASS
+\item \textbf{\texttt{E12-2}}: PASS
+\item \textbf{\texttt{E12-3}}: PASS
+\item \textbf{\texttt{E13-1}}: PASS
+\item \textbf{\texttt{E13-2}}: PASS
+\item \textbf{\texttt{E13-3}}: PASS
+\item \textbf{\texttt{E13-4}}: PASS
+\item \textbf{\texttt{E13-5}}: PASS
+\item \textbf{\texttt{E13-6}}: PASS
+\item \textbf{\texttt{E13-7}}: FAIL \\
+\textit{text:} When "HYD 1 Enable" output is disabled, then "Alt/Emer Ctrl" output shall be enabled \\
+\textit{witness:} \texttt{alt\_emer\_ctrl\_on=False, hyd1\_enable\_on=False}
+\item \textbf{\texttt{E13-8}}: PASS
+\item \textbf{\texttt{E13-9}}: PASS
+\item \textbf{\texttt{E14-1}}: PASS
+\item \textbf{\texttt{E14-2}}: PASS
+\item \textbf{\texttt{E14-3}}: FAIL \\
+\textit{text:} The probability of 7 or more wheel speed sensors erroneous or inoperative will be less than 1.0E-07 per flight \\
+\textit{witness:} \texttt{p\_seven\_or\_more\_sensors\_per\_flight=1.0000e-07}
+\item \textbf{\texttt{E14-4}}: FAIL \\
+\textit{text:} The probability of loss of an airplane electrical power bus will be less than 1.0E-04 per flight \\
+\textit{witness:} \texttt{p\_loss\_elec\_bus\_per\_flight=1.0000e-04}
+\item \textbf{\texttt{E14-5}}: FAIL \\
+\textit{text:} The probability of loss of a Left brake pedal position input will be less than 1.0E-04 per flight \\
+\textit{witness:} \texttt{p\_loss\_pedal\_per\_flight=1.0000e-04}
+\item \textbf{\texttt{E14-6}}: PASS
+\item \textbf{\texttt{E14-7}}: PASS
+\end{itemize}
+\textbf{Summary: 15 passed, 4 failed.}
+\subsection*{\texttt{BSCU\_SPEC\_REQUIREMENTS} entails each \texttt{BSCU\_PSSA\_REQUIREMENTS}}
+\begin{itemize}
+\item \textbf{\texttt{BSCU-001}}: PASS
+\item \textbf{\texttt{BSCU-002}}: PASS
+\item \textbf{\texttt{BSCU-003}}: PASS
+\item \textbf{\texttt{BSCU-004}}: PASS
+\item \textbf{\texttt{BSCU-005}}: PASS
+\item \textbf{\texttt{BSCU-006}}: PASS
+\item \textbf{\texttt{BSCU-007}}: PASS
+\item \textbf{\texttt{BSCU-008}}: PASS
+\item \textbf{\texttt{BSCU-009}}: PASS
+\item \textbf{\texttt{BSCU-010}}: PASS
+\item \textbf{\texttt{BSCU-011}}: PASS
+\end{itemize}
+\textbf{Summary: 11 passed, 0 failed.}
+\section{Restatement equivalence}
+\begin{itemize}
+\item \textbf{\texttt{E14-1} $\Leftrightarrow$ \texttt{E28-WBS-ASMP-1}}: EQUIVALENT
+\item \textbf{\texttt{E14-2} $\Leftrightarrow$ \texttt{E28-WBS-ASMP-2}}: EQUIVALENT
+\item \textbf{\texttt{E14-3} $\Leftrightarrow$ \texttt{E28-WBS-ASMP-3}}: EQUIVALENT
+\item \textbf{\texttt{E14-4} $\Leftrightarrow$ \texttt{E28-WBS-ASMP-4}}: NOT EQUIVALENT \\
+\texttt{E14-4}: The probability of loss of an airplane electrical power bus will be less than 1.0E-04 per flight \\
+\texttt{E28-WBS-ASMP-4}: The failure rate for loss of an airplane electrical power bus will be less than 1.0E-04 per hour of flight \\
+\texttt{E14-4} entails \texttt{E28-WBS-ASMP-4}: PASS \\
+\texttt{E28-WBS-ASMP-4} entails \texttt{E14-4}: FAIL; witness: \texttt{p\_loss\_elec\_bus\_per\_flight=4.8828e-04}
+\item \textbf{\texttt{E14-5} $\Leftrightarrow$ \texttt{E28-WBS-ASMP-5}}: NOT EQUIVALENT \\
+\texttt{E14-5}: The probability of loss of a Left brake pedal position input will be less than 1.0E-04 per flight \\
+\texttt{E28-WBS-ASMP-5}: The failure rate for loss of a left brake pedal position input will be less than 1.0E-04 per hour of flight \\
+\texttt{E14-5} entails \texttt{E28-WBS-ASMP-5}: PASS \\
+\texttt{E28-WBS-ASMP-5} entails \texttt{E14-5}: FAIL; witness: \texttt{p\_loss\_pedal\_per\_flight=4.8828e-04}
+\item \textbf{\texttt{E14-6} $\Leftrightarrow$ \texttt{E28-WBS-ASMP-6}}: EQUIVALENT
+\item \textbf{\texttt{E14-7} $\Leftrightarrow$ \texttt{E28-WBS-ASMP-7}}: EQUIVALENT
+\end{itemize}
+\textbf{Summary: 5 equivalent, 2 not equivalent.}
+\end{document}
