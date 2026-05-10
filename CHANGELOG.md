@@ -11,9 +11,12 @@
 - New entailment pair declared at the airplane layer, mirroring the existing pattern at the WBS and BSCU layers.
 - Ten equivalence pairs declared, three of them spanning the AFHA and SFHA assumption catalogues.
 
-### New finding
+### New findings
 
-- Finding 3, a strict-versus-non-strict drift between the AFHA and SFHA versions of the high-speed-overrun definition. Surfaced by the bidirectional equivalence check on the pair `(ASMP 3.2.2-1, SASP 1.1-6)`, with a witness state at the boundary where the two definitions disagree.
+The bidirectional equivalence check is itself new in v0.2. Two findings emerge from it.
+
+- Finding 2, a unit mismatch between Tables E14 and E28 of ARP4754B Appendix E. Two safety assumptions are restated as per-hour failure rates rather than per-flight probabilities, with no accompanying numeric adjustment. Under the five-hour flight axiom the per-hour formulations are five times weaker than the per-flight formulations. Surfaced on the pairs `(E14-4, E28-WBS-ASMP-4)` and `(E14-5, E28-WBS-ASMP-5)`, with witness state `p_loss_elec_bus_per_flight = 4.8828e-04` sitting in the gap between the two bounds.
+- Finding 3, a strict-versus-non-strict drift between the AFHA and SFHA versions of the high-speed-overrun definition. Surfaced on the pair `(ASMP 3.2.2-1, SASP 1.1-6)`, with a witness state at the boundary where the two definitions disagree.
 
 ### Solver
 
@@ -40,6 +43,13 @@
 - Each finding slide gains two table screenshots from the standard, showing the offending rows in their original context.
 - New Implications slide between Finding 3 and Closing.
 - Theme switched from a blue gradient with sans-serif body to a flat off-white with a serif body and restrained borders.
+
+### Project layout
+
+- Encoded examples moved from `reqs.py` at the repository root into `examples/arp4754b_appendix_e.py`.
+- New top-level directories: `pdfs/` for source standards, `reports/` for generated `.tex` and `.pdf` output, `prompts/` for the encoding prompt.
+- Website assets organised into `docs/icons/`, `docs/figures/`, and `docs/reports/`, with `index.html` and `style.css` at the `docs/` root.
+- README trimmed to a short description, a pointer to the writeup, and the run section. `CHANGELOG.md` introduced.
 
 ## v0.1 (2026-05-05)
 
