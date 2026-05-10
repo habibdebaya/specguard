@@ -68,7 +68,7 @@ def main():
         "--section",
         required=True,
         help="Free-text description of the section to encode "
-             "(e.g. 'Appendix E, Tables E12 through E14, pages 137-139').",
+             "(e.g. 'Appendix E').",
     )
     parser.add_argument(
         "--out",

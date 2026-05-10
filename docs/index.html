@@ -4,10 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>specguard</title>
-  <link rel="icon" type="image/svg+xml" href="favicon.svg">
-  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png">
-  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="icon" type="image/svg+xml" href="icons/favicon.svg">
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -25,85 +25,266 @@
   </nav>
   <main>
 
-    <section class="slide">
-      <div class="content">
-        <h1 class="title">specguard</h1>
-        <p class="subtitle">Formal-logic verification of aerospace safety standards</p>
-        <p>Aerospace safety standards govern how civil aircraft systems are developed and certified. Boeing, Airbus, and COMAC certify their aircraft against ARP4754B, the SAE recommended practice. The document is 172 pages long, written in English and tables, reviewed by humans, and not formally verified.</p>
-        <p>specguard encodes its requirements as Z3 constraints and runs three families of generic logical checks. Applied to ARP4754B Appendix E, the standard's own worked example of a wheel brake system, it surfaces two real defects. Both emerge from the algebra of the encoded constraints, with no heuristic targeting either finding.</p>
-      </div>
-    </section>
+    <section class="slide slide-intro">
+      <div class="content intro-grid">
+        <div class="intro-prose">
+          <h1 class="title">specguard</h1>
+          <p class="subtitle">Formal-logic verification of aerospace safety standards</p>
+          <p>specguard is a formal verification tool for aerospace safety standards. The development and certification of civil aircraft systems is governed by such standards, which typically run to several hundred pages of English prose and structured tables. ARP4754B, the SAE Recommended Practice for the development of civil aircraft and systems, sits among the most widely adopted of these, and Boeing, Airbus, and COMAC each certify their aircraft against it. Standards of this length and structure are reviewed line by line by human engineers, but they are not historically subject to mechanical formal verification.</p>
+          <p>specguard closes that gap. The requirements of a standard are translated into Z3 constraints by a large language model under a tightly specified prompt, the translation is reviewed by a human for fidelity, and three families of generic logical checks are run against the resulting formal structure. We applied the tool to Appendix E of ARP4754B, the standard's own worked example of a wheel brake system, as a test bench, and it surfaced three real defects. Each defect emerges from the algebra of the encoded constraints rather than from any heuristic that targeted the particular finding.</p>
+        </div>
+        <aside class="intro-aside">
+          <figure class="report-frame">
+            <iframe src="reports/arp4754b_appendix_e.pdf#view=FitH" title="specguard report"></iframe>
+            <figcaption>Generated report (20 pp). <a href="reports/arp4754b_appendix_e.pdf">Open</a></figcaption>
+          </figure>
+          <figure class="code-frame">
+<pre><code><span class="id">PSSA_REQUIREMENTS</span> = [
+    Req(<span class="s">"E13-6"</span>,
+        <span class="s">'When "HYD 1 Enable" output is enabled, '</span>
+        <span class="s">'then "Alt/Emer Ctrl" output shall be disabled'</span>,
+        Implies(hyd1_enable_on, Not(alt_emer_ctrl_on))),
 
-    <section class="slide">
-      <div class="content">
-        <h2 class="slide-title">The gap</h2>
-        <p>A document of 172 pages, structured into many overlapping tables, restated and refined across multiple revisions, can contain logical defects that survive review. Two requirements may use the same identifier but state different obligations. A safety claim stated in one section may be restated in another in a different unit, with the rewrite failing to preserve the original claim's strength. A propositional condition with two directions may have only one direction propagated to the contract that downstream suppliers build against.</p>
-        <p>Each individual statement reads sensibly. The inconsistency only emerges when statements are paired up.</p>
-        <p class="closing"><em>specguard automates that pairing.</em></p>
+    Req(<span class="s">"E13-7"</span>,
+        <span class="s">'When "HYD 1 Enable" output is disabled, '</span>
+        <span class="s">'then "Alt/Emer Ctrl" output shall be enabled'</span>,
+        Implies(Not(hyd1_enable_on), alt_emer_ctrl_on)),
+]
+
+<span class="id">UNIT_RELATIONS</span> = [
+    flight_duration_hours == 5,
+    p_loss_elec_bus_per_flight ==
+        lambda_loss_elec_bus_per_hour
+        * flight_duration_hours,
+]</code></pre>
+            <figcaption>Encoding excerpt. <a href="https://github.com/habibdebaya/specguard">Source</a></figcaption>
+          </figure>
+        </aside>
       </div>
     </section>
 
     <section class="slide slide-defect">
       <div class="content">
-        <h2 class="slide-title">The approach</h2>
-        <p>Each numbered requirement is encoded as a <code>Req(id, text, constraint)</code> entry, with the verbatim English preserved alongside a Z3 expression that captures its logical content. Boolean variables represent propositions; real-valued variables represent probabilities, rates, durations, and quantities. Symbols are reused across requirements that name the same physical concept. Conditional language becomes <code>Implies</code>, conjunction becomes <code>And</code>, probabilistic bounds become inequalities.</p>
-        <p>The full Appendix E was encoded across three system layers (airplane, WBS, BSCU), 141 numbered requirements in seven named collections. Where the standard restates the same claim in different units, the conversion is made explicit through axioms derived from section E.3.3, which establishes that flights average five hours.</p>
-        <h3>Three check families</h3>
-        <ul class="dual">
-          <li><strong>Internal consistency.</strong> Each collection is jointly satisfiable.</li>
-          <li><strong>Directional entailment.</strong> Every constraint in the target follows from the entailer under the axioms.</li>
-          <li><strong>Bidirectional equivalence.</strong> Two requirements declared as restatements entail each other under the axioms.</li>
-        </ul>
-        <p>Failures produce witness states extracted from Z3's model.</p>
+        <h2 class="slide-title">Motivation</h2>
+        <p>A document of 172 pages, structured into many overlapping tables and refined across multiple revisions, can contain logical defects that survive even an exhaustive human review. The table of contents below gives a sense of the surface area against which review must hold.</p>
+        <div class="toc-slideshow">
+          <div class="toc-frame">
+            <figure class="toc-slide active">
+              <img src="figures/toc_1.png" alt="ARP4754B table of contents, page 1 of 3, sections 1 through 4.3.">
+            </figure>
+            <figure class="toc-slide">
+              <img src="figures/toc_2.png" alt="ARP4754B table of contents, page 2 of 3, sections 4.4 through 6.2.">
+            </figure>
+            <figure class="toc-slide">
+              <img src="figures/toc_3.png" alt="ARP4754B table of contents, page 3 of 3, with appendices, figures and tables.">
+            </figure>
+          </div>
+          <div class="toc-controls">
+            <button class="toc-prev" type="button" aria-label="Previous page" disabled>&lsaquo;</button>
+            <span class="toc-counter" aria-live="polite">1 / 3</span>
+            <button class="toc-next" type="button" aria-label="Next page">&rsaquo;</button>
+          </div>
+        </div>
+        <p>Two requirements may share an identifier yet state different obligations. A safety claim stated in one section may be restated elsewhere in a different unit, with the rewrite failing to preserve the original claim's strength. A propositional condition that the analysis treats as a biconditional may have only one of its two directions propagated to the contract against which downstream suppliers build their systems.</p>
+        <p>Each individual statement reads sensibly on its own. The inconsistency emerges only when statements are read together in pairs.</p>
+        <p class="closing"><em>specguard automates that pairing. The remainder of this deck describes how, with Appendix E of ARP4754B as the worked example throughout.</em></p>
+      </div>
+    </section>
+
+    <section class="slide slide-defect">
+      <div class="content">
+        <h2 class="slide-title">Approach</h2>
+        <p>The encoding of a standard begins with a single record per requirement. The record carries the verbatim English text, the standard's own identifier, and a Z3 expression that captures the requirement's logical content. From this small shape the rest of the apparatus follows. Symbols stand for propositions and quantities, an axiom block carries the shared algebraic relations the standard relies on, and three families of generic checks are run against whatever the requirements file declares.</p>
+
+        <h3>Encoding by LLM</h3>
+        <p>The encoding step is the hardest part of the pipeline to automate. It requires reading the natural-language text of a several-hundred-page document and producing, for each numbered requirement, a Z3 expression that captures its logical content. The combination of natural-language understanding and structured output is what large language models are best at, and so specguard delegates the encoding to an LLM under a tightly specified prompt. The prompt sits in <code>prompts/</code> and is the only piece of the pipeline that is domain-aware.</p>
+        <p>The prompt instructs the LLM to make three deliberate passes over the chosen section of the standard. The first pass plans the symbol table, identifying every distinct logical concept that needs a Z3 symbol and choosing between Bool and Real on the basis of the underlying type. The second pass encodes each requirement, pairing the verbatim English of the standard with a Z3 expression that follows the structure of the English faithfully. The third pass cross-references the encoded constraints, identifies pairs of requirements that purport to be restatements of the same claim, and declares them in the equivalence map.</p>
+        <p>The justification for this division of labour is that the three roles of the pipeline are kept separate. The LLM transcribes natural-language text into formal expressions, applying a single consistent encoding convention across hundreds of requirements. The human reviewer confirms that the produced expressions faithfully represent each requirement's intent. The Z3 solver, which is mechanical and well-understood, operates on the resulting formal structure. No single component is trusted to do all three jobs. The separation makes the methodology auditable at each stage. It is also what allows a several-hundred-page standard to be encoded at all, since fully manual encoding would require weeks of expert time per revision.</p>
+        <p>What follows in this section is the encoding produced for Appendix E of ARP4754B, which serves as the worked example throughout the rest of this deck.</p>
+
+        <h3>The data shape</h3>
+        <p>One dataclass holds the three fields. Every requirement throughout the worked example, and every requirement in any standard the tool can encode, appears in this form.</p>
+<pre class="code-block"><code>@dataclass
+class Req:
+    id: str
+    text: str
+    constraint: object
+
+
+Req("E13-7",
+    'When "HYD 1 Enable" output is disabled, '
+    'then "Alt/Emer Ctrl" output shall be enabled',
+    Implies(Not(hyd1_enable_on), alt_emer_ctrl_on))</code></pre>
+
+        <h3>The symbol table</h3>
+        <p>Boolean symbols stand for propositional facts about the system, such as a control output being enabled or a failure event having occurred. Real-valued symbols stand for measured quantities, including probabilities, failure rates, durations, and pressures. Where two requirements name the same physical concept the encoding reuses one symbol. Where the names sound similar but the unit basis differs, distinct symbols are introduced and joined later through axioms.</p>
+<pre class="code-block"><code>hyd1_enable_on                 = Bool("hyd1_enable_on")
+p_loss_elec_bus_per_flight     = Real("p_loss_elec_bus_per_flight")
+lambda_loss_elec_bus_per_hour  = Real("lambda_loss_elec_bus_per_hour")</code></pre>
+
+        <h3>Axioms</h3>
+        <p>The axiom block carries shared algebraic relations the standard relies on but does not state inside any individual requirement. The most consequential of these in ARP4754B Appendix E is the conversion between per-flight probabilities and per-hour failure rates, which is derived from section E.3.3 of the standard, where it is established that flights last on average five hours.</p>
+<pre class="code-block"><code>UNIT_RELATIONS = [
+    flight_duration_hours == 5,
+    p_loss_elec_bus_per_flight ==
+        lambda_loss_elec_bus_per_hour * flight_duration_hours,
+]</code></pre>
+
+        <h3>Internal consistency</h3>
+        <p>A single collection is internally consistent when its constraints are jointly satisfiable under the axioms. The check loads every constraint and every axiom into one solver and asks whether a model exists. A failure produces an unsat core, which is the minimal subset of constraints that contradict each other.</p>
+<pre class="code-block"><code>s = Solver()
+for ax in axioms:
+    s.add(ax)
+for r in collection:
+    s.assert_and_track(r.constraint, Bool(f"track_{r.id}"))
+result = s.check()</code></pre>
+
+        <h3>Directional entailment</h3>
+        <p>Entailment of one collection by another is checked one requirement at a time. The solver loads the entailer's full set of constraints together with the axioms, then asks whether the negation of the target requirement is satisfiable. If the answer is unsat, the target is entailed. If the answer is sat, the model returned by the solver is the witness state in which the entailer holds and the target fails.</p>
+<pre class="code-block"><code>s = Solver()
+for ax in axioms:
+    s.add(ax)
+for c in entailer_constraints:
+    s.add(c)
+s.add(Not(target_constraint))
+if s.check() == unsat:
+    pass                  # entailed
+else:
+    witness = s.model()   # counterexample</code></pre>
+
+        <h3>Bidirectional equivalence</h3>
+        <p>Two requirements that the standard claims to be restatements of each other are checked by running the entailment procedure in both directions. A pair is equivalent only if both directions hold. When one direction fails, the witness reveals the precise state in which the two formulations disagree.</p>
+<pre class="code-block"><code>a_to_b = entails([a.constraint], b.constraint, axioms)
+b_to_a = entails([b.constraint], a.constraint, axioms)
+equivalent = a_to_b and b_to_a</code></pre>
+
+        <h3>Data-driven extension</h3>
+        <p>The solver carries no domain knowledge. Adding a new entailment is a single tuple appended to a list. Adding a new equivalence is a single tuple. Adding a new collection is a new module-level list of <code>Req</code> entries. The same solver code runs in every case, with the requirements file as the single source of what to check. The solver was not modified between the encoding's first version, which surfaced two findings, and its current version, which surfaces three findings across four additional collections.</p>
+<pre class="code-block"><code>ENTAILMENT_PAIRS = [
+    ("AIRPLANE_REQUIREMENTS", "PASA_SAFETY_REQUIREMENTS"),
+    ("SPEC_REQUIREMENTS", "PSSA_REQUIREMENTS"),
+    ("BSCU_SPEC_REQUIREMENTS", "BSCU_PSSA_REQUIREMENTS"),
+]
+
+EQUIVALENCE_MAP = [
+    ("E14-4", "E28-WBS-ASMP-4"),
+    ("E14-5", "E28-WBS-ASMP-5"),
+    ("ASMP 3.2.2-1", "SASP 1.1-6"),
+    ...
+]</code></pre>
+
+        <h3>Pipeline</h3>
+        <p>Each run produces a typeset report. The encoded requirements appear alongside their Z3 form rendered in proper logical notation. Every check result is laid out, every witness is reported, and every unsat core is listed. The .tex file is compiled to PDF in the same step, so an artefact suitable for inclusion in a certification dossier or a technical paper is produced automatically alongside the textual output.</p>
       </div>
     </section>
 
     <section class="slide slide-defect">
       <div class="content">
         <h2 class="slide-title">Finding 1: an asymmetric encoding of a paired conditional</h2>
-        <p>Table E13 of Appendix E, the proposed safety requirements from the WBS PSSA, contains two paired entries:</p>
+        <p>Table E13 of Appendix E, which contains the proposed safety requirements from the WBS Preliminary System Safety Assessment, presents two paired entries that together specify a biconditional relationship between the HYD 1 Enable signal and the Alt/Emer Ctrl signal. At any moment in operation, exactly one of the two control signals is intended to be active, so a working braking path is always available.</p>
         <blockquote>
           <p><strong>E13-6.</strong> When "HYD 1 Enable" output is enabled, then "Alt/Emer Ctrl" output shall be disabled.</p>
           <p><strong>E13-7.</strong> When "HYD 1 Enable" output is disabled, then "Alt/Emer Ctrl" output shall be enabled.</p>
         </blockquote>
-        <p>Together these specify a biconditional. At any moment exactly one of the two control signals is active, so a working braking path is always available.</p>
-        <p>In Table E19, the WBS Requirements Specification, only one of the two directions is propagated. Requirement S18-WBS-R-6109 captures E13-6 verbatim. There is no corresponding requirement for E13-7's converse direction.</p>
-        <p>The directional entailment check on <code>(SPEC_REQUIREMENTS, PSSA_REQUIREMENTS)</code> reports E13-7 as failing. The witness state Z3 produces:</p>
+        <p>In Table E19, the final Wheel Brake System Requirements Specification, only one of these two directions is propagated. Requirement S18-WBS-R-6109 captures E13-6 verbatim, but no requirement in the contract corresponds to the converse direction stated in E13-7.</p>
+        <div class="tables">
+          <figure>
+            <img src="figures/finding1_1.png" alt="Table E13 from page 137 of ARP4754B Appendix E, showing rows 6 and 7 specifying the paired biconditional.">
+            <figcaption>Table E13, p. 137. Rows 6 and 7 specify both directions.</figcaption>
+          </figure>
+          <figure>
+            <img src="figures/finding1_2.png" alt="Excerpt of Table E19 from page 144 showing S18-WBS-R-6109 with only the forward direction.">
+            <figcaption>Table E19, p. 144. S18-WBS-R-6109 carries only the forward direction.</figcaption>
+          </figure>
+        </div>
+        <p>The directional entailment check on the pair <code>(SPEC_REQUIREMENTS, PSSA_REQUIREMENTS)</code> reports E13-7 as failing. The witness state Z3 produces is one in which both control signals are simultaneously inactive.</p>
         <pre class="logic">alt_emer_ctrl_on = False
 hyd1_enable_on   = False</pre>
-        <p>This is a state where neither control signal is active. The PSSA forbids it; the SPEC permits it. A supplier building strictly to the SPEC carries no formal obligation to rule it out, even though the safety analysis identifies it as a state where braking is unavailable.</p>
+        <p>The Preliminary System Safety Assessment forbids this state, but the contract permits it. A supplier building strictly to the contract therefore carries no formal obligation to rule it out, even though the safety analysis identifies it as a state in which braking is unavailable.</p>
       </div>
     </section>
 
     <section class="slide slide-defect">
       <div class="content">
         <h2 class="slide-title">Finding 2: a unit mismatch between Tables E14 and E28</h2>
-        <p>Table E14 lists seven safety assumptions from the WBS PSSA. Two of them concern probabilities of input-loss events:</p>
+        <p>Table E14 lists the seven safety assumptions from the WBS Preliminary System Safety Assessment, two of which concern the probabilities of input-loss events:</p>
         <blockquote>
           <p><strong>E14-4.</strong> The probability of loss of an airplane electrical power bus will be less than 1.0E-04 per flight.</p>
         </blockquote>
-        <p>Table E28 is the master assumption catalogue for the development. It restates the seven WBS PSSA entries with a slight rewording. For five of them the restatement preserves the unit basis. For entries 4 and 5 it does not:</p>
+        <p>Table E28 is the master assumption catalogue for the entire development effort. It restates the seven WBS PSSA entries with a slight rewording, and for five of these the restatement preserves the original unit basis. For entries 4 and 5 it does not:</p>
         <blockquote>
           <p><strong>E28 WBS PSSA ASMP 4.</strong> The failure rate for loss of an airplane electrical power bus will be less than 1.0E-04 per hour of flight.</p>
         </blockquote>
-        <p>The numeric value is identical (<code>1.0E-04</code>). The unit basis has changed from per-flight probability to per-hour failure rate. Under the five-hour flight from section E.3.3, a per-hour bound of <code>1.0E-04</code> corresponds to a per-flight probability of approximately <code>5.0E-04</code>, five times the per-flight bound Table E14 sets.</p>
-        <p>The two formulations are encoded with distinct symbols, related through the axiom block. The bidirectional equivalence check reports:</p>
+        <div class="tables">
+          <figure>
+            <img src="figures/finding2_1.png" alt="Table E14 from page 137, showing seven safety-assessment assumptions with row 4 expressed per flight.">
+            <figcaption>Table E14, p. 137. Row 4 is stated per flight.</figcaption>
+          </figure>
+          <figure>
+            <img src="figures/finding2_2.png" alt="Table E28 WBS PSSA ASMP block from page 158, showing row 4 restated per hour of flight.">
+            <figcaption>Table E28, p. 158. WBS PSSA ASMP 4 is restated per hour of flight.</figcaption>
+          </figure>
+        </div>
+        <p>The numeric value is identical at <code>1.0E-04</code>, but the unit basis has changed from a per-flight probability to a per-hour failure rate. Under the five-hour flight averaged in section E.3.3, a per-hour bound of <code>1.0E-04</code> corresponds to a per-flight probability of approximately <code>5.0E-04</code>, which is five times the per-flight bound that Table E14 sets.</p>
+        <p>The two formulations are encoded with distinct symbols, related to one another through the axiom block. The bidirectional equivalence check reports the following:</p>
         <pre class="logic">E14-4  ⇔  E28-WBS-ASMP-4         NOT EQUIVALENT
 
 E14-4 entails E28-WBS-ASMP-4     PASS
 E28-WBS-ASMP-4 entails E14-4     FAIL
 
 witness: p_loss_elec_bus_per_flight = 4.8828e-04</pre>
-        <p>The witness value sits below <code>5.0e-04</code> (per-hour bound satisfied) and above <code>1.0e-04</code> (per-flight bound violated). The two restatements are not equivalent. The same shape repeats for E14-5 and E28 ASMP 5.</p>
-        <p>The asymmetry in the rewrite is the signature of a transcription event. Five entries were carried through unchanged; two had their units flipped without an accompanying numeric adjustment. A unit-preserving restatement would have produced two formulations Z3 could prove equivalent. The actual restatement does not.</p>
+        <p>The witness value sits below <code>5.0e-04</code>, satisfying the per-hour bound, and above <code>1.0e-04</code>, violating the per-flight bound. The two restatements are therefore not equivalent. The same shape repeats for E14-5 and E28 ASMP 5.</p>
+        <p>The asymmetry in the rewrite is the signature of a transcription event. Five of the seven entries were carried through unchanged, while two had their units flipped without an accompanying numeric adjustment. A unit-preserving restatement would have produced two formulations that Z3 could prove equivalent. The actual restatement does not.</p>
+      </div>
+    </section>
+
+    <section class="slide slide-defect">
+      <div class="content">
+        <h2 class="slide-title">Finding 3: a strict-versus-non-strict drift between AFHA and SFHA</h2>
+        <p>Table E2 of Appendix E lists the eight assumptions of the Aircraft Functional Hazard Assessment, which are inputs to the airplane-level safety analysis. Among these is a definition of what constitutes a high-speed runway overrun:</p>
+        <blockquote>
+          <p><strong>ASMP 3.2.2-1.</strong> Overrunning the runway length above "XYZ" knots is considered a high speed overrun.</p>
+        </blockquote>
+        <p>Table E10, the assumption catalogue of the System Functional Hazard Assessment one layer below, restates the same definition with slightly different wording:</p>
+        <blockquote>
+          <p><strong>SASP 1.1-6.</strong> Overrunning the runway length at or above "XYZ" knots is considered a high speed overrun.</p>
+        </blockquote>
+        <div class="tables">
+          <figure>
+            <img src="figures/finding3_1.png" alt="Table E2 from page 112 showing AFHA assumption 3.2.2-1 with the strict 'above' wording.">
+            <figcaption>Table E2, p. 112. AFHA uses "above" (strict).</figcaption>
+          </figure>
+          <figure>
+            <img src="figures/finding3_2.png" alt="Table E10 from page 128 showing SFHA assumption 1.1-6 with the non-strict 'at or above' wording.">
+            <figcaption>Table E10, p. 128. SFHA uses "at or above" (non-strict).</figcaption>
+          </figure>
+        </div>
+        <p>The two statements differ only in the inclusivity of the inequality. The AFHA version uses "above", a strict comparison. The SFHA version uses "at or above", a non-strict comparison. PASA-ASMP-01, which appears later in the standard, fixes the parametric XYZ at 30 knots and uses "above 30" in the strict form, aligning with the AFHA wording.</p>
+        <p>Encoded faithfully with shared symbols for the groundspeed and the threshold, the bidirectional equivalence check on the pair reports the following:</p>
+        <pre class="logic">ASMP 3.2.2-1  ⇔  SASP 1.1-6      NOT EQUIVALENT
+
+ASMP 3.2.2-1 entails SASP 1.1-6  FAIL
+SASP 1.1-6 entails ASMP 3.2.2-1  PASS
+
+witness: groundspeed_overrun_kt = xyz_overrun_threshold_kt
+         high_speed_overrun     = False</pre>
+        <p>The witness state has the groundspeed exactly equal to the threshold. At that boundary the SFHA wording classifies the overrun as high-speed, while the AFHA wording does not. The two restatements of what was intended to be a single definition are therefore not equivalent under the algebra of the encoded constraints. The drift fits the same shape as the unit mismatch above, namely a transcription event between two layers of the analysis, here flipping a single inequality direction rather than a unit basis.</p>
+      </div>
+    </section>
+
+    <section class="slide slide-defect">
+      <div class="content">
+        <h2 class="slide-title">Implications</h2>
+        <p>The most direct implication of specguard is that an aerospace safety standard can be verified algebraically rather than by exhaustive line-by-line review. The verification cost of a several-hundred-page document drops from hundreds of engineer-hours per revision to a single solver run against a translated requirements file. The translation itself, which previously required a human typing for weeks, is now performed by an LLM in minutes and confirmed by a human in hours. The economics of safety verification therefore shifts substantially. Full algebraic checking becomes feasible at every revision, every release, and every transcription of a claim from one layer of analysis to another.</p>
+        <p>The three findings produced by running specguard against Appendix E of ARP4754B are concrete evidence of what this looks like in practice. Each one is a restatement of the same underlying claim across two parts of the standard, in which the restatement fails to preserve the claim under a transformation that human review does not perform. Finding 1 fails to preserve a biconditional, because only one of its two directions is propagated to the supplier-facing specification. Finding 2 fails to preserve a probability bound, because the unit basis is changed without an accompanying numeric adjustment. Finding 3 fails to preserve a definition, because the boundary inequality is altered between the airplane and system layers of analysis.</p>
+        <p>The shape is structural to layered safety standards rather than incidental to ARP4754B. Aerospace standards in general organise their requirements into a Preliminary System Safety Assessment and a downstream specification across multiple system layers. They mix per-flight probabilities with per-hour failure rates. They restate upstream claims into the contracts against which suppliers build their systems. Each of these conventions creates the surface area on which the kind of restatement drift specguard surfaces becomes possible. The methodology generalises directly to other standards in this domain.</p>
       </div>
     </section>
 
     <section class="slide">
       <div class="content">
         <h2 class="slide-title">Closing</h2>
-        <p>Both findings have a common structure. They survived human review because each individual statement reads sensibly. The defect requires pairing requirements, applying a conversion or a symmetry, and noticing that the pair fails to compose. Reviewers reading sequentially do not perform this composition; algebra does.</p>
-        <p>The methodology generalises. Aerospace standards beyond ARP4754B use the same layered PSSA/SPEC structure, the same per-flight and per-hour conventions, the same restatement of upstream claims into downstream specifications. The encoding shape is reusable. The check families take no domain knowledge. specguard runs whatever the requirements file declares.</p>
+        <p>specguard is the subject of this deck, demonstrated against Appendix E of ARP4754B as the worked example. The methodology is reusable across other layered safety standards, the encoding shape is explicit in the source, and the typeset report and full requirements file are linked below.</p>
         <p class="source"><a href="https://github.com/habibdebaya/specguard">github.com/habibdebaya/specguard</a></p>
       </div>
     </section>
@@ -146,6 +327,29 @@ witness: p_loss_elec_bus_per_flight = 4.8828e-04</pre>
       });
 
       showSlide(0);
+    })();
+
+    (function () {
+      const ss = document.querySelector('.toc-slideshow');
+      if (!ss) return;
+      const slides = ss.querySelectorAll('.toc-slide');
+      const prev = ss.querySelector('.toc-prev');
+      const next = ss.querySelector('.toc-next');
+      const counter = ss.querySelector('.toc-counter');
+      let i = 0;
+
+      function show(idx) {
+        if (idx < 0 || idx >= slides.length) return;
+        slides.forEach((s, j) => s.classList.toggle('active', j === idx));
+        counter.textContent = (idx + 1) + ' / ' + slides.length;
+        prev.disabled = idx === 0;
+        next.disabled = idx === slides.length - 1;
+        i = idx;
+      }
+
+      prev.addEventListener('click', (e) => { e.stopPropagation(); show(i - 1); });
+      next.addEventListener('click', (e) => { e.stopPropagation(); show(i + 1); });
+      show(0);
     })();
   </script>
 </body>

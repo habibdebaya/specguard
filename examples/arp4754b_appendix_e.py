@@ -1,22 +1,12 @@
 """
-Comprehensive Z3 encoding of ARP4754B Appendix E (Wheel Brake System).
+Z3 encoding of ARP4754B Appendix E (Wheel Brake System).
 
-Three system layers and one alternate formulation:
-  - AIRPLANE_REQUIREMENTS       Airplane-level (Table E31)
-  - PSSA_REQUIREMENTS           WBS-level analysis claims (Tables E12, E13, E14)
-  - ALT_PSSA_REQUIREMENTS       WBS PSSA restated as failure rates (Table E28 WBS PSSA ASMP)
-  - SPEC_REQUIREMENTS           WBS-level specification (Tables E15, E16, E18 timing, E19)
-  - BSCU_PSSA_REQUIREMENTS      BSCU-level analysis claims (Table E22)
-  - BSCU_ASSUMPTIONS_TO_WBS     BSCU assumptions communicated to WBS (Table E23)
-  - BSCU_SPEC_REQUIREMENTS      BSCU-level specification (Table E24)
-
-Plus UNIT_RELATIONS, the axiom block carrying the per-flight to per-hour
-conversion derived from E.3.3 (5-hour average flight).
-
-Tables omitted because they are evidence or metadata rather than logical
-claims: E17 (signal lists), E20 (allocation duplicating E19), E21 (IDAL
-assignments without their interpretation rules), E25-E27, E29-E33 (QA
-evidence and configuration indices), and the figures.
+Collections, axioms (UNIT_RELATIONS), and the cross-collection check
+declarations (ENTAILMENT_PAIRS, EQUIVALENCE_MAP) are organised by system
+layer: airplane, WBS, BSCU. Tables that are evidence, metadata, or pure
+traceability are skipped. Where multiple table revisions exist (E4 vs E31
+at the airplane layer, E11/E16 vs E19 at the WBS layer) only the latest
+is encoded.
 """
 
 from dataclasses import dataclass
@@ -30,8 +20,6 @@ class Req:
     text: str
     constraint: object
 
-
-# ── Symbol table: failure and event Bools ──
 
 failed_normal_braking       = Bool("failed_normal_braking")
 failed_alternate_braking    = Bool("failed_alternate_braking")
@@ -48,7 +36,6 @@ both_engine_hyd_failed      = Bool("both_engine_hyd_failed")
 complete_loss_wheel_brake   = Bool("complete_loss_wheel_brake")
 loss_one_thrust_reverser    = Bool("loss_one_thrust_reverser")
 
-# BSCU command and signal Bools
 bscu_provides_sov_cmd       = Bool("bscu_provides_sov_cmd")
 bscu_provides_nmv_cmd       = Bool("bscu_provides_nmv_cmd")
 hyd1_enable_on              = Bool("hyd1_enable_on")
@@ -59,7 +46,6 @@ bscu_brake_outputs_in_use   = Bool("bscu_brake_outputs_in_use")
 wbs_status_failure          = Bool("wbs_status_failure")
 bscu_maintenance_initiated  = Bool("bscu_maintenance_initiated")
 
-# BSCU channel architecture Bools
 channel1_invalid                    = Bool("channel1_invalid")
 channel2_invalid                    = Bool("channel2_invalid")
 channel2_cmd_normal_ctrl            = Bool("channel2_cmd_normal_ctrl")
@@ -74,8 +60,6 @@ power_supply_state_indep_monitor    = Bool("power_supply_state_indep_monitor")
 power_up_self_tests_ch2             = Bool("power_up_self_tests_ch2")
 power_up_tests_psm                  = Bool("power_up_tests_psm")
 
-
-# ── Symbol table: WBS capability and property Bools (Table E19) ──
 
 wbs_has_decelerate_means        = Bool("wbs_has_decelerate_means")
 wbs_differential_braking        = Bool("wbs_differential_braking")
@@ -109,8 +93,6 @@ bscu_two_independent_power      = Bool("bscu_two_independent_power")
 brake_pedals_indep_rudder       = Bool("brake_pedals_indep_rudder")
 
 
-# ── Symbol table: BSCU-level capability Bools (Table E24) ──
-
 bscu_controls_meter_valves      = Bool("bscu_controls_meter_valves")
 bscu_controls_antiskid_valves   = Bool("bscu_controls_antiskid_valves")
 bscu_controls_shutoff_valves    = Bool("bscu_controls_shutoff_valves")
@@ -124,8 +106,6 @@ bscu_hw_idal_a                  = Bool("bscu_hw_idal_a")
 bscu_sw_idal_b                  = Bool("bscu_sw_idal_b")
 bscu_radiation_qualified        = Bool("bscu_radiation_qualified")
 
-
-# ── Symbol table: airplane-level Bools (Table E31) ──
 
 airplane_decelerate_on_ground            = Bool("airplane_decelerate_on_ground")
 airplane_decelerate_wheels_on_ground     = Bool("airplane_decelerate_wheels_on_ground")
@@ -143,9 +123,6 @@ airplane_decelerate_function_fdal_a      = Bool("airplane_decelerate_function_fd
 airplane_has_emergency_accumulator       = Bool("airplane_has_emergency_accumulator")
 
 
-# ── Symbol table: probabilities, rates, and quantities ──
-
-# Per-flight probabilities (Tables E13, E14, E19)
 p_bscu_loss_braking_cmd          = Real("p_bscu_loss_braking_cmd")
 p_bscu_erroneous_cmd             = Real("p_bscu_erroneous_cmd")
 p_bscu_loss_sov_cmd              = Real("p_bscu_loss_sov_cmd")
@@ -156,22 +133,58 @@ p_seven_or_more_sensors_per_flight = Real("p_seven_or_more_sensors_per_flight")
 p_loss_elec_bus_per_flight       = Real("p_loss_elec_bus_per_flight")
 p_loss_pedal_per_flight          = Real("p_loss_pedal_per_flight")
 
-# Per-hour failure rates (Table E28 WBS PSSA ASMP)
 lambda_loss_elec_bus_per_hour    = Real("lambda_loss_elec_bus_per_hour")
 lambda_loss_pedal_per_hour       = Real("lambda_loss_pedal_per_hour")
 
-# Per-landing probabilities (Tables E19, E31)
 p_total_loss_decelerate              = Real("p_total_loss_decelerate")
 p_complete_loss_wheel_braking_per_landing = Real("p_complete_loss_wheel_braking_per_landing")
 
-# Other quantities
 stopping_distance_ft                 = Real("stopping_distance_ft")
 accumulator_pressure_psi             = Real("accumulator_pressure_psi")
 actuator_response_time_ms            = Real("actuator_response_time_ms")
 flight_duration_hours                = Real("flight_duration_hours")
 
 
-# ── Axioms: unit conversions (E.3.3 and the linear approximation P ≈ λt) ──
+wbs_charges_accumulator_pre_normal   = Bool("wbs_charges_accumulator_pre_normal")
+bscu_charges_accumulator_pre_normal  = Bool("bscu_charges_accumulator_pre_normal")
+
+
+groundspeed_overrun_kt              = Real("groundspeed_overrun_kt")
+groundspeed_taxi_kt                 = Real("groundspeed_taxi_kt")
+xyz_overrun_threshold_kt            = Real("xyz_overrun_threshold_kt")
+high_speed_overrun                  = Bool("high_speed_overrun")
+low_speed_overrun                   = Bool("low_speed_overrun")
+
+afha_dir_addressed_by_ctrl_dir      = Bool("afha_dir_addressed_by_ctrl_dir")
+crew_diverts_when_aware_unlandable  = Bool("crew_diverts_when_aware_unlandable")
+malfunction_immediately_evident     = Bool("malfunction_immediately_evident")
+annunciated_failure_decel_takeoff   = Bool("annunciated_failure_decel_takeoff")
+annunciated_failure_decel_after_v1  = Bool("annunciated_failure_decel_after_v1")
+rto_initiated                       = Bool("rto_initiated")
+landings_with_env_factors_assessed  = Bool("landings_with_env_factors_assessed")
+failure_decel_capability            = Bool("failure_decel_capability")
+detected_and_annunciated_onboard    = Bool("detected_and_annunciated_onboard")
+
+degraded_state_half_capability      = Bool("degraded_state_half_capability")
+erroneous_ground_detection          = Bool("erroneous_ground_detection")
+correct_wheel_speed_info            = Bool("correct_wheel_speed_info")
+wheel_braking_function_available    = Bool("wheel_braking_function_available")
+
+bscu_in_avionics_compartment_fwd    = Bool("bscu_in_avionics_compartment_fwd")
+ebu_to_bscu_lines_routed_short      = Bool("ebu_to_bscu_lines_routed_short")
+hyd_reservoirs_aft_of_uerf          = Bool("hyd_reservoirs_aft_of_uerf")
+hyd_distribution_aft_of_uerf        = Bool("hyd_distribution_aft_of_uerf")
+hyd_forward_lines_isolated          = Bool("hyd_forward_lines_isolated")
+power_supply_lines_routed_short     = Bool("power_supply_lines_routed_short")
+cabin_depress_alt_limited_10000ft   = Bool("cabin_depress_alt_limited_10000ft")
+
+
+deceleration_capability_loss_pct    = Real("deceleration_capability_loss_pct")
+total_loss_deceleration             = Bool("total_loss_deceleration")
+
+failure_conditions_assessed_wet     = Bool("failure_conditions_assessed_wet")
+rto_caused_external_or_failure      = Bool("rto_caused_external_or_failure")
+
 
 UNIT_RELATIONS = [
     flight_duration_hours == 5,
@@ -179,8 +192,6 @@ UNIT_RELATIONS = [
     p_loss_pedal_per_flight == lambda_loss_pedal_per_hour * flight_duration_hours,
 ]
 
-
-# ── PSSA inputs, WBS layer (Tables E12, E13, E14) ──
 
 PSSA_REQUIREMENTS = [
     Req("E12-1",
@@ -266,11 +277,6 @@ PSSA_REQUIREMENTS = [
 ]
 
 
-# ── Alternate WBS PSSA formulation (Table E28 WBS PSSA ASMP block) ──
-# Restates Table E14 with entries 4 and 5 converted to per-hour failure rates.
-# Bidirectional entailment between PSSA_REQUIREMENTS and ALT_PSSA_REQUIREMENTS
-# under UNIT_RELATIONS surfaces the unit-mismatch defect.
-
 ALT_PSSA_REQUIREMENTS = [
     Req("E28-WBS-ASMP-1",
         "The probability of 'Loss of Normal Braking System Hydraulic Equipment' will be less than 3.3E-05 per flight",
@@ -301,8 +307,6 @@ ALT_PSSA_REQUIREMENTS = [
         Not(And(failed_hyd_1, failed_hyd_2))),
 ]
 
-
-# ── WBS specification (Tables E15, E16, E18 timing, E19) ──
 
 SPEC_REQUIREMENTS = [
     Req("S18-WBS-R-0020",
@@ -441,6 +445,10 @@ SPEC_REQUIREMENTS = [
         "The emergency accumulator shall be attached to the HYD 2 hydraulic line between the Selector Valve and the Alternate/Emergency Meter Valve",
         accumulator_attached_to_hyd2),
 
+    Req("S18-WBS-R-2976",
+        "Wheel Brake System shall charge the emergency accumulator prior to normal operation",
+        wbs_charges_accumulator_pre_normal),
+
     Req("S18-WBS-R-2986",
         "The wheel brake command function of the BSCU shall be developed as FDAL A",
         bscu_cmd_fdal_a),
@@ -512,8 +520,6 @@ SPEC_REQUIREMENTS = [
 ]
 
 
-# ── BSCU PSSA inputs (Table E22) ──
-
 BSCU_PSSA_REQUIREMENTS = [
     Req("BSCU-001",
         "Channel #1 shall have physical independence from Channel #2",
@@ -561,8 +567,6 @@ BSCU_PSSA_REQUIREMENTS = [
 ]
 
 
-# ── BSCU PSSA assumptions communicated to WBS level (Table E23) ──
-
 BSCU_ASSUMPTIONS_TO_WBS = [
     Req("E23-1",
         "When 'HYD 1 Enable' is disabled, the BSCU brake control outputs are not used",
@@ -573,8 +577,6 @@ BSCU_ASSUMPTIONS_TO_WBS = [
         Implies(wbs_status_failure, bscu_maintenance_initiated)),
 ]
 
-
-# ── BSCU specification (Table E24) ──
 
 BSCU_SPEC_REQUIREMENTS = [
     Req("S18-BSCU-R-0001",
@@ -633,6 +635,10 @@ BSCU_SPEC_REQUIREMENTS = [
     Req("S18-BSCU-R-0013",
         "BSCU shall control the shut off valves",
         bscu_controls_shutoff_valves),
+
+    Req("S18-BSCU-R-0020",
+        "BSCU shall control the valves to charge the emergency accumulator prior to normal operation",
+        bscu_charges_accumulator_pre_normal),
 
     Req("S18-BSCU-R-0027",
         "Each BSCU shall have two command channels",
@@ -716,15 +722,13 @@ BSCU_SPEC_REQUIREMENTS = [
 ]
 
 
-# ── Airplane-level requirements (Table E31) ──
-
 AIRPLANE_REQUIREMENTS = [
     Req("S18-ACFT-R-1000",
         "The S18 airplane shall have a means to decelerate on ground",
         airplane_decelerate_on_ground),
 
     Req("S18-ACFT-R-1100",
-        "The S18 airplane shall have a means to decelerate the wheels on the ground",
+        "The S18 airplane shall have a means to decelerate the wheels on ground",
         airplane_decelerate_wheels_on_ground),
 
     Req("S18-ACFT-R-1110",
@@ -797,20 +801,153 @@ AIRPLANE_REQUIREMENTS = [
 ]
 
 
-# ── Entailment pairs ──
-# Each pair declares that the second collection's claims should follow
-# from the first collection's constraints under the axioms.
+PASA_SAFETY_REQUIREMENTS = [
+    Req("PASA-SR-01",
+        "Decelerate wheels function shall be developed FDAL A",
+        airplane_decelerate_function_fdal_a),
+
+    Req("PASA-SR-05",
+        "[FF1.1] Complete loss of wheel brake shall be less than 1.0E-07 for a landing.",
+        p_complete_loss_wheel_braking_per_landing < 1.0e-07),
+
+    Req("PASA-SR-10",
+        "No single failure or event shall result in the complete loss of wheel brake and the loss of one thrust reverser.",
+        Not(And(complete_loss_wheel_brake, loss_one_thrust_reverser))),
+
+    Req("PASA-SR-12",
+        "Loss of power from both hydraulic subsystems powered by the engines shall not lead to complete loss of wheel braking.",
+        Implies(both_engine_hyd_failed, Not(complete_loss_wheel_brake))),
+
+    Req("PASA-SR-13",
+        "The Alternate/Emergency Brake System hydraulic equipment and piping shall be installed aft of the engine 1 UERF trajectory envelope.",
+        alt_emer_aft_of_uerf),
+
+    Req("PASA-SR-14",
+        "Two redundant control lanes shall be provided between the Electric Brake Unit and each of the two Alternate/Emergency Meter Valves.",
+        ebu_two_redundant_lanes),
+]
+
+
+AIRPLANE_ASSUMPTIONS = [
+    Req("ASMP 3.2.2-1",
+        "Overrunning the runway length above \"XYZ\" knots is considered a high speed overrun.",
+        Implies(groundspeed_overrun_kt > xyz_overrun_threshold_kt, high_speed_overrun)),
+
+    Req("ASMP 3.2.2-2",
+        "The directional aspect of asymmetric failures of deceleration systems are functionally addressed by failure conditions of the \"Control direction on ground\" airplane function (see function 2.3 AFHA).",
+        afha_dir_addressed_by_ctrl_dir),
+
+    Req("ASMP 3.2.2-3",
+        "The flight crew will divert to a suitable airfield if aware of a condition that renders the airplane incapable of landing at the originally intended destination.",
+        crew_diverts_when_aware_unlandable),
+
+    Req("ASMP 3.2.2-4",
+        "Crew awareness is not a factor for the identified malfunction, as these are immediately evident due to aircraft behavior and do not have their effects intensified or mitigated by crew awareness features.",
+        malfunction_immediately_evident),
+
+    Req("ASMP 3.2.2-5",
+        "The flight crew will not initiate a Rejected Takeoff (RTO) in response to an annunciated failure of deceleration features during takeoff due to alert suppression.",
+        Implies(annunciated_failure_decel_takeoff, Not(rto_initiated))),
+
+    Req("ASMP 3.2.2-6",
+        "Taxi is performed at groundspeeds below 30 knots.",
+        groundspeed_taxi_kt < 30),
+
+    Req("ASMP 3.2.2-7",
+        "Landings with failure condition in combination with environmental factors have been assessed.",
+        landings_with_env_factors_assessed),
+
+    Req("ASMP 3.2.2-8",
+        "Failures of deceleration capability will be detected and annunciated by on-board systems.",
+        Implies(failure_decel_capability, detected_and_annunciated_onboard)),
+
+    Req("PASA-ASMP-01",
+        "It is assumed that the high speed overrun is above 30 knots and low speed overrun is below (or equal) 30 knots. This assumption has been derived from the AFHA assumption ASMP 3.2.2-1 and ASMP 3.2.2-6 for the establishment of the criteria and terms of \"high-speed overrun\" and \"low speed overrun.\"",
+        And(
+            high_speed_overrun == (groundspeed_overrun_kt > 30),
+            low_speed_overrun == (groundspeed_overrun_kt <= 30),
+        )),
+
+    Req("PASA-ASMP-02",
+        "The degraded state of systems considered in the CoFFE analysis has been defined such as half functional capability.",
+        degraded_state_half_capability),
+
+    Req("PASA-ASMP-03",
+        "Wheel Brake System uses ground detection information together with the wheel speed information. These functions are developed independently so that even if Erroneous Ground Detection Information (AGS.MF) is provided on ground, i.e., with false in-flight status, wheel braking function is available if there is correct wheel speed information.",
+        Implies(And(erroneous_ground_detection, correct_wheel_speed_info),
+                wheel_braking_function_available)),
+
+    Req("PRA-UERF-ASSUMPTION-01",
+        "The BSCU is installed in the avionics compartment located in the nose fuselage section of the airplane, forward of the UERF area.",
+        bscu_in_avionics_compartment_fwd),
+
+    Req("PRA-UERF-ASSUMPTION-02",
+        "The electrical lines transmitting the brake control signals from the Electric Brake Unit to the BSCU are routed \"to the shortest\" from one end to the other in the nose fuselage section of the airplane, thus are kept forward of the UERF area.",
+        ebu_to_bscu_lines_routed_short),
+
+    Req("PRA-UERF-ASSUMPTION-03",
+        "The hydraulic reservoirs and the high pressure manifolds of the hydraulic subsystems 1 and 2 are located in the fuselage, aft of the UERF area.",
+        hyd_reservoirs_aft_of_uerf),
+
+    Req("PRA-UERF-ASSUMPTION-04",
+        "The hydraulic power distribution lines from the engine driven pumps to the respective hydraulic reservoirs and high pressure manifolds exit the engine pylons aft of the wing rear spars, then run along, aft of, the wing rear spars to the fuselage, and are kept aft of the UERF area inside the fuselage.",
+        hyd_distribution_aft_of_uerf),
+
+    Req("PRA-UERF-ASSUMPTION-05",
+        "The hydraulic distribution lines routed to the forward part of the fuselage to supply hydraulic equipment located forward of the UERF area are fitted with appropriate isolation means located aft of the UERF area.",
+        hyd_forward_lines_isolated),
+
+    Req("PRA-UERF-ASSUMPTION-06",
+        "The power supply lines from the electrical power center(s) to the EBU are routed \"to the shortest\" from one end to the other in the nose fuselage section of the airplane.",
+        power_supply_lines_routed_short),
+
+    Req("PRA-UERF-ASSUMPTION-07",
+        "In case of cabin depressurization the airplane altitude will be limited by procedure to 10000 feet.",
+        cabin_depress_alt_limited_10000ft),
+]
+
+
+WBS_SFHA_ASSUMPTIONS = [
+    Req("SASP 1.1-1",
+        "Loss of 80% or more of deceleration capability is considered a total loss of the deceleration means.",
+        Implies(deceleration_capability_loss_pct >= 80, total_loss_deceleration)),
+
+    Req("SASP 1.1-2",
+        "Failure Conditions are assessed on wet runway conditions.",
+        failure_conditions_assessed_wet),
+
+    Req("SASP 1.1-3",
+        "RTO is considered an operational condition caused either by an external event or by a system failure (annunciated or perceived by the flight crew) during takeoff run.",
+        rto_caused_external_or_failure),
+
+    Req("SASP 1.1-4",
+        "The flight crew will not initiate an RTO due to an annunciated failure of the deceleration function after V1.",
+        Implies(annunciated_failure_decel_after_v1, Not(rto_initiated))),
+
+    Req("SASP 1.1-5",
+        "Taxi is performed at groundspeeds below 30 knots.",
+        groundspeed_taxi_kt < 30),
+
+    Req("SASP 1.1-6",
+        "Overrunning the runway length at or above \"XYZ\" knots is considered a high speed overrun.",
+        Implies(groundspeed_overrun_kt >= xyz_overrun_threshold_kt, high_speed_overrun)),
+
+    Req("SASP 1.1-7",
+        "Overrunning the runway length below \"XYZ\" knots is considered a low speed overrun.",
+        Implies(groundspeed_overrun_kt < xyz_overrun_threshold_kt, low_speed_overrun)),
+
+    Req("SASP 1.1-8",
+        "Failures of deceleration capability will be detected and annunciated by on-board systems.",
+        Implies(failure_decel_capability, detected_and_annunciated_onboard)),
+]
+
 
 ENTAILMENT_PAIRS = [
+    ("AIRPLANE_REQUIREMENTS", "PASA_SAFETY_REQUIREMENTS"),
     ("SPEC_REQUIREMENTS", "PSSA_REQUIREMENTS"),
     ("BSCU_SPEC_REQUIREMENTS", "BSCU_PSSA_REQUIREMENTS"),
 ]
 
-
-# ── Restatement pairings ──
-# Each pair names two requirements that purport to express the same claim
-# in different forms. The solver runs bidirectional entailment under the
-# axiom block to check that the two are genuinely equivalent.
 
 EQUIVALENCE_MAP = [
     ("E14-1", "E28-WBS-ASMP-1"),
@@ -820,4 +957,8 @@ EQUIVALENCE_MAP = [
     ("E14-5", "E28-WBS-ASMP-5"),
     ("E14-6", "E28-WBS-ASMP-6"),
     ("E14-7", "E28-WBS-ASMP-7"),
+
+    ("ASMP 3.2.2-6", "SASP 1.1-5"),
+    ("ASMP 3.2.2-8", "SASP 1.1-8"),
+    ("ASMP 3.2.2-1", "SASP 1.1-6"),
 ]

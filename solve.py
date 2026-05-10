@@ -117,9 +117,6 @@ def witness_for(model, constraint):
     return ", ".join(f"{v}={format_value(model[v])}" for v in vars_ref)
 
 
-# ── Checks (return structured results) ──
-
-
 def check_consistency(name, requirements, axioms):
     s = Solver()
     for ax in axioms:
@@ -183,9 +180,6 @@ def check_equivalence_pair(id_a, id_b, all_reqs, axioms):
     }
 
 
-# ── Text printing ──
-
-
 def print_consistency(result):
     print(f"\n== {result['name']} internal consistency ==")
     print(result["result"])
@@ -229,9 +223,6 @@ def print_equivalence(results):
                 print(f"          witness: {r['witness_ba']}")
             neq += 1
     print(f"  {eq} equivalent, {neq} not equivalent")
-
-
-# ── Main ──
 
 
 def main():
@@ -290,11 +281,15 @@ def main():
     if equivalence_results:
         print_equivalence(equivalence_results)
 
-    out_path = write_report(
+    tex_path, pdf_path = write_report(
         args.reqs, collections, axioms,
         consistency_results, entailment_results, equivalence_results,
     )
-    print(f"\nLaTeX report written to {out_path}")
+    print(f"\nLaTeX report written to {tex_path}")
+    if pdf_path is not None:
+        print(f"PDF report written to {pdf_path}")
+    else:
+        print("PDF compilation skipped (pdflatex not found or failed).")
 
 
 if __name__ == "__main__":

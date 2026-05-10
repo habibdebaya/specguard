@@ -1,17 +1,16 @@
 """
-LaTeX report rendering for specguard.
-
-Called automatically from solve.py at the end of every run. The report
-lands in reports/<stem>.tex where <stem> is the basename of the
-requirements file. Compile with pdflatex.
+LaTeX + PDF report rendering for specguard. Called automatically from
+solve.py: writes reports/<stem>.tex and compiles reports/<stem>.pdf
+alongside it, where <stem> is the basename of the requirements file.
+Agnostic to which collections, axioms, or check pairs the requirements
+file declares.
 """
 
 from pathlib import Path
+import shutil
+import subprocess
 
 import z3
-
-
-# ── Path helpers ──
 
 
 def display_path(path):
@@ -30,9 +29,6 @@ def report_path_for(source_path):
     src = Path(source_path)
     project_root = Path(__file__).parent
     return project_root / "reports" / (src.stem + ".tex")
-
-
-# ── LaTeX rendering primitives ──
 
 
 _LATEX_INFIX = {
@@ -134,9 +130,6 @@ def tex_escape(text):
     return "".join(out)
 
 
-# ── Report assembly ──
-
-
 def render_latex(source_path, collections, axioms, consistency, entailment, equivalence):
     short_source = display_path(source_path)
     L = []
@@ -161,7 +154,6 @@ def render_latex(source_path, collections, axioms, consistency, entailment, equi
     L.append(r"\begin{document}")
     L.append(r"\maketitle")
 
-    # Encoded collections
     L.append(r"\section{Encoded collections}")
     for name, reqs in collections.items():
         L.append(rf"\subsection*{{\texttt{{{tex_escape(name)}}}}}")
@@ -171,7 +163,6 @@ def render_latex(source_path, collections, axioms, consistency, entailment, equi
             L.append(to_latex(r.constraint))
             L.append(r"\end{dmath*}")
 
-    # Axioms
     if axioms:
         L.append(r"\section{Axioms}")
         for ax in axioms:
@@ -179,7 +170,6 @@ def render_latex(source_path, collections, axioms, consistency, entailment, equi
             L.append(to_latex(ax))
             L.append(r"\end{dmath*}")
 
-    # Internal consistency
     L.append(r"\section{Internal consistency}")
     L.append(r"\begin{itemize}")
     for r in consistency:
@@ -191,7 +181,6 @@ def render_latex(source_path, collections, axioms, consistency, entailment, equi
             L.append(r"\end{itemize}")
     L.append(r"\end{itemize}")
 
-    # Directional entailment
     if entailment:
         L.append(r"\section{Directional entailment}")
         for er in entailment:
@@ -209,7 +198,6 @@ def render_latex(source_path, collections, axioms, consistency, entailment, equi
             L.append(r"\end{itemize}")
             L.append(rf"\textbf{{Summary: {pass_count} passed, {fail_count} failed.}}")
 
-    # Restatement equivalence
     if equivalence:
         L.append(r"\section{Restatement equivalence}")
         L.append(r"\begin{itemize}")
@@ -244,9 +232,34 @@ def render_latex(source_path, collections, axioms, consistency, entailment, equi
     return "\n".join(L) + "\n"
 
 
+def compile_pdf(tex_path):
+    tex_path = Path(tex_path)
+    out_dir = tex_path.parent
+    pdf_path = out_dir / (tex_path.stem + ".pdf")
+    if shutil.which("pdflatex") is None:
+        return None
+    subprocess.run(
+        ["pdflatex", "-interaction=nonstopmode",
+         "-output-directory", str(out_dir), str(tex_path)],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    for ext in (".aux", ".log", ".out"):
+        aux = out_dir / (tex_path.stem + ext)
+        if aux.exists():
+            aux.unlink()
+    return pdf_path if pdf_path.exists() else None
+
+
 def write_report(source_path, collections, axioms, consistency, entailment, equivalence):
-    out_path = report_path_for(source_path)
-    out_path.parent.mkdir(parents=True, exist_ok=True)
+    tex_path = report_path_for(source_path)
+    tex_path.parent.mkdir(parents=True, exist_ok=True)
     text = render_latex(source_path, collections, axioms, consistency, entailment, equivalence)
-    out_path.write_text(text)
-    return out_path
+    tex_path.write_text(text)
+    pdf_path = compile_pdf(tex_path)
+    if pdf_path is not None and pdf_path.name == "arp4754b_appendix_e.pdf":
+        docs_reports = Path(__file__).parent / "docs" / "reports"
+        docs_reports.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(pdf_path, docs_reports / pdf_path.name)
+    return tex_path, pdf_path

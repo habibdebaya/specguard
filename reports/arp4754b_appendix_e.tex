@@ -262,6 +262,10 @@
 \begin{dmath*}
 \text{accumulator\_attached\_to\_hyd2}
 \end{dmath*}
+\noindent\textbf{\texttt{S18-WBS-R-2976}}\quad Wheel Brake System shall charge the emergency accumulator prior to normal operation
+\begin{dmath*}
+\text{wbs\_charges\_accumulator\_pre\_normal}
+\end{dmath*}
 \noindent\textbf{\texttt{S18-WBS-R-2986}}\quad The wheel brake command function of the BSCU shall be developed as FDAL A
 \begin{dmath*}
 \text{bscu\_cmd\_fdal\_a}
@@ -433,6 +437,10 @@
 \begin{dmath*}
 \text{bscu\_controls\_shutoff\_valves}
 \end{dmath*}
+\noindent\textbf{\texttt{S18-BSCU-R-0020}}\quad BSCU shall control the valves to charge the emergency accumulator prior to normal operation
+\begin{dmath*}
+\text{bscu\_charges\_accumulator\_pre\_normal}
+\end{dmath*}
 \noindent\textbf{\texttt{S18-BSCU-R-0027}}\quad Each BSCU shall have two command channels
 \begin{dmath*}
 \text{bscu\_each\_two\_command\_channels}
@@ -518,7 +526,7 @@
 \begin{dmath*}
 \text{airplane\_decelerate\_on\_ground}
 \end{dmath*}
-\noindent\textbf{\texttt{S18-ACFT-R-1100}}\quad The S18 airplane shall have a means to decelerate the wheels on the ground
+\noindent\textbf{\texttt{S18-ACFT-R-1100}}\quad The S18 airplane shall have a means to decelerate the wheels on ground
 \begin{dmath*}
 \text{airplane\_decelerate\_wheels\_on\_ground}
 \end{dmath*}
@@ -590,6 +598,137 @@
 \begin{dmath*}
 \text{ebu\_two\_redundant\_lanes}
 \end{dmath*}
+\subsection*{\texttt{PASA\_SAFETY\_REQUIREMENTS}}
+\noindent\textbf{\texttt{PASA-SR-01}}\quad Decelerate wheels function shall be developed FDAL A
+\begin{dmath*}
+\text{airplane\_decelerate\_function\_fdal\_a}
+\end{dmath*}
+\noindent\textbf{\texttt{PASA-SR-05}}\quad [FF1.1] Complete loss of wheel brake shall be less than 1.0E-07 for a landing.
+\begin{dmath*}
+\text{p\_complete\_loss\_wheel\_braking\_per\_landing} < 1 \times 10^{-7}
+\end{dmath*}
+\noindent\textbf{\texttt{PASA-SR-10}}\quad No single failure or event shall result in the complete loss of wheel brake and the loss of one thrust reverser.
+\begin{dmath*}
+\neg (\text{complete\_loss\_wheel\_brake} \wedge \text{loss\_one\_thrust\_reverser})
+\end{dmath*}
+\noindent\textbf{\texttt{PASA-SR-12}}\quad Loss of power from both hydraulic subsystems powered by the engines shall not lead to complete loss of wheel braking.
+\begin{dmath*}
+(\text{both\_engine\_hyd\_failed} \Rightarrow \neg \text{complete\_loss\_wheel\_brake})
+\end{dmath*}
+\noindent\textbf{\texttt{PASA-SR-13}}\quad The Alternate/Emergency Brake System hydraulic equipment and piping shall be installed aft of the engine 1 UERF trajectory envelope.
+\begin{dmath*}
+\text{alt\_emer\_aft\_of\_uerf}
+\end{dmath*}
+\noindent\textbf{\texttt{PASA-SR-14}}\quad Two redundant control lanes shall be provided between the Electric Brake Unit and each of the two Alternate/Emergency Meter Valves.
+\begin{dmath*}
+\text{ebu\_two\_redundant\_lanes}
+\end{dmath*}
+\subsection*{\texttt{AIRPLANE\_ASSUMPTIONS}}
+\noindent\textbf{\texttt{ASMP 3.2.2-1}}\quad Overrunning the runway length above "XYZ" knots is considered a high speed overrun.
+\begin{dmath*}
+(\text{groundspeed\_overrun\_kt} > \text{xyz\_overrun\_threshold\_kt} \Rightarrow \text{high\_speed\_overrun})
+\end{dmath*}
+\noindent\textbf{\texttt{ASMP 3.2.2-2}}\quad The directional aspect of asymmetric failures of deceleration systems are functionally addressed by failure conditions of the "Control direction on ground" airplane function (see function 2.3 AFHA).
+\begin{dmath*}
+\text{afha\_dir\_addressed\_by\_ctrl\_dir}
+\end{dmath*}
+\noindent\textbf{\texttt{ASMP 3.2.2-3}}\quad The flight crew will divert to a suitable airfield if aware of a condition that renders the airplane incapable of landing at the originally intended destination.
+\begin{dmath*}
+\text{crew\_diverts\_when\_aware\_unlandable}
+\end{dmath*}
+\noindent\textbf{\texttt{ASMP 3.2.2-4}}\quad Crew awareness is not a factor for the identified malfunction, as these are immediately evident due to aircraft behavior and do not have their effects intensified or mitigated by crew awareness features.
+\begin{dmath*}
+\text{malfunction\_immediately\_evident}
+\end{dmath*}
+\noindent\textbf{\texttt{ASMP 3.2.2-5}}\quad The flight crew will not initiate a Rejected Takeoff (RTO) in response to an annunciated failure of deceleration features during takeoff due to alert suppression.
+\begin{dmath*}
+(\text{annunciated\_failure\_decel\_takeoff} \Rightarrow \neg \text{rto\_initiated})
+\end{dmath*}
+\noindent\textbf{\texttt{ASMP 3.2.2-6}}\quad Taxi is performed at groundspeeds below 30 knots.
+\begin{dmath*}
+\text{groundspeed\_taxi\_kt} < 30
+\end{dmath*}
+\noindent\textbf{\texttt{ASMP 3.2.2-7}}\quad Landings with failure condition in combination with environmental factors have been assessed.
+\begin{dmath*}
+\text{landings\_with\_env\_factors\_assessed}
+\end{dmath*}
+\noindent\textbf{\texttt{ASMP 3.2.2-8}}\quad Failures of deceleration capability will be detected and annunciated by on-board systems.
+\begin{dmath*}
+(\text{failure\_decel\_capability} \Rightarrow \text{detected\_and\_annunciated\_onboard})
+\end{dmath*}
+\noindent\textbf{\texttt{PASA-ASMP-01}}\quad It is assumed that the high speed overrun is above 30 knots and low speed overrun is below (or equal) 30 knots. This assumption has been derived from the AFHA assumption ASMP 3.2.2-1 and ASMP 3.2.2-6 for the establishment of the criteria and terms of "high-speed overrun" and "low speed overrun."
+\begin{dmath*}
+(\text{high\_speed\_overrun} = \text{groundspeed\_overrun\_kt} > 30 \wedge \text{low\_speed\_overrun} = \text{groundspeed\_overrun\_kt} \leq 30)
+\end{dmath*}
+\noindent\textbf{\texttt{PASA-ASMP-02}}\quad The degraded state of systems considered in the CoFFE analysis has been defined such as half functional capability.
+\begin{dmath*}
+\text{degraded\_state\_half\_capability}
+\end{dmath*}
+\noindent\textbf{\texttt{PASA-ASMP-03}}\quad Wheel Brake System uses ground detection information together with the wheel speed information. These functions are developed independently so that even if Erroneous Ground Detection Information (AGS.MF) is provided on ground, i.e., with false in-flight status, wheel braking function is available if there is correct wheel speed information.
+\begin{dmath*}
+((\text{erroneous\_ground\_detection} \wedge \text{correct\_wheel\_speed\_info}) \Rightarrow \text{wheel\_braking\_function\_available})
+\end{dmath*}
+\noindent\textbf{\texttt{PRA-UERF-ASSUMPTION-01}}\quad The BSCU is installed in the avionics compartment located in the nose fuselage section of the airplane, forward of the UERF area.
+\begin{dmath*}
+\text{bscu\_in\_avionics\_compartment\_fwd}
+\end{dmath*}
+\noindent\textbf{\texttt{PRA-UERF-ASSUMPTION-02}}\quad The electrical lines transmitting the brake control signals from the Electric Brake Unit to the BSCU are routed "to the shortest" from one end to the other in the nose fuselage section of the airplane, thus are kept forward of the UERF area.
+\begin{dmath*}
+\text{ebu\_to\_bscu\_lines\_routed\_short}
+\end{dmath*}
+\noindent\textbf{\texttt{PRA-UERF-ASSUMPTION-03}}\quad The hydraulic reservoirs and the high pressure manifolds of the hydraulic subsystems 1 and 2 are located in the fuselage, aft of the UERF area.
+\begin{dmath*}
+\text{hyd\_reservoirs\_aft\_of\_uerf}
+\end{dmath*}
+\noindent\textbf{\texttt{PRA-UERF-ASSUMPTION-04}}\quad The hydraulic power distribution lines from the engine driven pumps to the respective hydraulic reservoirs and high pressure manifolds exit the engine pylons aft of the wing rear spars, then run along, aft of, the wing rear spars to the fuselage, and are kept aft of the UERF area inside the fuselage.
+\begin{dmath*}
+\text{hyd\_distribution\_aft\_of\_uerf}
+\end{dmath*}
+\noindent\textbf{\texttt{PRA-UERF-ASSUMPTION-05}}\quad The hydraulic distribution lines routed to the forward part of the fuselage to supply hydraulic equipment located forward of the UERF area are fitted with appropriate isolation means located aft of the UERF area.
+\begin{dmath*}
+\text{hyd\_forward\_lines\_isolated}
+\end{dmath*}
+\noindent\textbf{\texttt{PRA-UERF-ASSUMPTION-06}}\quad The power supply lines from the electrical power center(s) to the EBU are routed "to the shortest" from one end to the other in the nose fuselage section of the airplane.
+\begin{dmath*}
+\text{power\_supply\_lines\_routed\_short}
+\end{dmath*}
+\noindent\textbf{\texttt{PRA-UERF-ASSUMPTION-07}}\quad In case of cabin depressurization the airplane altitude will be limited by procedure to 10000 feet.
+\begin{dmath*}
+\text{cabin\_depress\_alt\_limited\_10000ft}
+\end{dmath*}
+\subsection*{\texttt{WBS\_SFHA\_ASSUMPTIONS}}
+\noindent\textbf{\texttt{SASP 1.1-1}}\quad Loss of 80\% or more of deceleration capability is considered a total loss of the deceleration means.
+\begin{dmath*}
+(\text{deceleration\_capability\_loss\_pct} \geq 80 \Rightarrow \text{total\_loss\_deceleration})
+\end{dmath*}
+\noindent\textbf{\texttt{SASP 1.1-2}}\quad Failure Conditions are assessed on wet runway conditions.
+\begin{dmath*}
+\text{failure\_conditions\_assessed\_wet}
+\end{dmath*}
+\noindent\textbf{\texttt{SASP 1.1-3}}\quad RTO is considered an operational condition caused either by an external event or by a system failure (annunciated or perceived by the flight crew) during takeoff run.
+\begin{dmath*}
+\text{rto\_caused\_external\_or\_failure}
+\end{dmath*}
+\noindent\textbf{\texttt{SASP 1.1-4}}\quad The flight crew will not initiate an RTO due to an annunciated failure of the deceleration function after V1.
+\begin{dmath*}
+(\text{annunciated\_failure\_decel\_after\_v1} \Rightarrow \neg \text{rto\_initiated})
+\end{dmath*}
+\noindent\textbf{\texttt{SASP 1.1-5}}\quad Taxi is performed at groundspeeds below 30 knots.
+\begin{dmath*}
+\text{groundspeed\_taxi\_kt} < 30
+\end{dmath*}
+\noindent\textbf{\texttt{SASP 1.1-6}}\quad Overrunning the runway length at or above "XYZ" knots is considered a high speed overrun.
+\begin{dmath*}
+(\text{groundspeed\_overrun\_kt} \geq \text{xyz\_overrun\_threshold\_kt} \Rightarrow \text{high\_speed\_overrun})
+\end{dmath*}
+\noindent\textbf{\texttt{SASP 1.1-7}}\quad Overrunning the runway length below "XYZ" knots is considered a low speed overrun.
+\begin{dmath*}
+(\text{groundspeed\_overrun\_kt} < \text{xyz\_overrun\_threshold\_kt} \Rightarrow \text{low\_speed\_overrun})
+\end{dmath*}
+\noindent\textbf{\texttt{SASP 1.1-8}}\quad Failures of deceleration capability will be detected and annunciated by on-board systems.
+\begin{dmath*}
+(\text{failure\_decel\_capability} \Rightarrow \text{detected\_and\_annunciated\_onboard})
+\end{dmath*}
 \section{Axioms}
 \begin{dmath*}
 \text{flight\_duration\_hours} = 5
@@ -609,8 +748,21 @@
 \item \texttt{BSCU\_ASSUMPTIONS\_TO\_WBS}: \textsc{sat}
 \item \texttt{BSCU\_SPEC\_REQUIREMENTS}: \textsc{sat}
 \item \texttt{AIRPLANE\_REQUIREMENTS}: \textsc{sat}
+\item \texttt{PASA\_SAFETY\_REQUIREMENTS}: \textsc{sat}
+\item \texttt{AIRPLANE\_ASSUMPTIONS}: \textsc{sat}
+\item \texttt{WBS\_SFHA\_ASSUMPTIONS}: \textsc{sat}
 \end{itemize}
 \section{Directional entailment}
+\subsection*{\texttt{AIRPLANE\_REQUIREMENTS} entails each \texttt{PASA\_SAFETY\_REQUIREMENTS}}
+\begin{itemize}
+\item \textbf{\texttt{PASA-SR-01}}: PASS
+\item \textbf{\texttt{PASA-SR-05}}: PASS
+\item \textbf{\texttt{PASA-SR-10}}: PASS
+\item \textbf{\texttt{PASA-SR-12}}: PASS
+\item \textbf{\texttt{PASA-SR-13}}: PASS
+\item \textbf{\texttt{PASA-SR-14}}: PASS
+\end{itemize}
+\textbf{Summary: 6 passed, 0 failed.}
 \subsection*{\texttt{SPEC\_REQUIREMENTS} entails each \texttt{PSSA\_REQUIREMENTS}}
 \begin{itemize}
 \item \textbf{\texttt{E12-1}}: PASS
@@ -674,6 +826,13 @@
 \texttt{E28-WBS-ASMP-5} entails \texttt{E14-5}: FAIL; witness: \texttt{p\_loss\_pedal\_per\_flight=4.8828e-04}
 \item \textbf{\texttt{E14-6} $\Leftrightarrow$ \texttt{E28-WBS-ASMP-6}}: EQUIVALENT
 \item \textbf{\texttt{E14-7} $\Leftrightarrow$ \texttt{E28-WBS-ASMP-7}}: EQUIVALENT
+\item \textbf{\texttt{ASMP 3.2.2-6} $\Leftrightarrow$ \texttt{SASP 1.1-5}}: EQUIVALENT
+\item \textbf{\texttt{ASMP 3.2.2-8} $\Leftrightarrow$ \texttt{SASP 1.1-8}}: EQUIVALENT
+\item \textbf{\texttt{ASMP 3.2.2-1} $\Leftrightarrow$ \texttt{SASP 1.1-6}}: NOT EQUIVALENT \\
+\texttt{ASMP 3.2.2-1}: Overrunning the runway length above "XYZ" knots is considered a high speed overrun. \\
+\texttt{SASP 1.1-6}: Overrunning the runway length at or above "XYZ" knots is considered a high speed overrun. \\
+\texttt{ASMP 3.2.2-1} entails \texttt{SASP 1.1-6}: FAIL; witness: \texttt{high\_speed\_overrun=False, xyz\_overrun\_threshold\_kt=0, groundspeed\_overrun\_kt=0} \\
+\texttt{SASP 1.1-6} entails \texttt{ASMP 3.2.2-1}: PASS
 \end{itemize}
-\textbf{Summary: 5 equivalent, 2 not equivalent.}
+\textbf{Summary: 7 equivalent, 3 not equivalent.}
 \end{document}
