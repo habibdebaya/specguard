@@ -73,6 +73,10 @@ main {
   flex-direction: column;
   gap: 0.4rem;
   z-index: 100;
+  transform: translateZ(0);
+  will-change: transform;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 
 .slide-nav button {
@@ -412,6 +416,10 @@ pre.code-block code {
   display: block;
 }
 
+.report-card {
+  display: none;
+}
+
 .report-frame figcaption,
 .code-frame figcaption {
   font-size: 0.82rem;
@@ -513,7 +521,53 @@ pre.code-block code {
   }
 
   .report-frame iframe {
-    height: 320px;
+    display: none;
+  }
+
+  .report-frame > figcaption {
+    display: none;
+  }
+
+  .report-card {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    padding: 0.95rem 1rem;
+    border: 1px solid #d8d6d0;
+    background: #ffffff;
+    text-decoration: none;
+    color: #1a1a1a;
+  }
+
+  .report-card-icon {
+    background: #1a1a1a;
+    color: #ffffff;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Courier New", monospace;
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 0.4rem 0.55rem;
+    letter-spacing: 0.05em;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+
+  .report-card-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    min-width: 0;
+  }
+
+  .report-card-title {
+    font-weight: 600;
+    font-size: 0.95rem;
+    font-family: inherit;
+  }
+
+  .report-card-meta {
+    font-size: 0.78rem;
+    color: #4a4a4a;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Courier New", monospace;
   }
 
   .slide-nav {
