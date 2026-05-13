@@ -73,7 +73,10 @@ def discover_collections(module):
 
 
 def get_axioms(module):
-    return list(getattr(module, "UNIT_RELATIONS", []))
+    return (
+        list(getattr(module, "UNIT_RELATIONS", []))
+        + list(getattr(module, "COMPOSITION_RELATIONS", []))
+    )
 
 
 def get_entailment_pairs(module):

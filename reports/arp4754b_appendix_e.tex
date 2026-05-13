@@ -729,6 +729,11 @@
 \begin{dmath*}
 (\text{failure\_decel\_capability} \Rightarrow \text{detected\_and\_annunciated\_onboard})
 \end{dmath*}
+\subsection*{\texttt{AIRPLANE\_CATASTROPHIC\_OBJECTIVES}}
+\noindent\textbf{\texttt{E.3.11-3}}\quad The airplane does not satisfy the safety objective for loss of deceleration capability if the probability of loss of both HYD 1 and HYD 2 was not extremely improbable (>1.0E-09).
+\begin{dmath*}
+\text{p\_loss\_both\_hyd\_per\_flight} \leq \text{catastrophic\_loss\_decel\_threshold}
+\end{dmath*}
 \section{Axioms}
 \begin{dmath*}
 \text{flight\_duration\_hours} = 5
@@ -738,6 +743,12 @@
 \end{dmath*}
 \begin{dmath*}
 \text{p\_loss\_pedal\_per\_flight} = \text{lambda\_loss\_pedal\_per\_hour} \cdot \text{flight\_duration\_hours}
+\end{dmath*}
+\begin{dmath*}
+\text{p\_loss\_both\_hyd\_per\_flight} = \text{p\_loss\_normal\_hyd\_equip} \cdot \text{p\_loss\_alt\_hyd\_equip}
+\end{dmath*}
+\begin{dmath*}
+\text{catastrophic\_loss\_decel\_threshold} = 1 \times 10^{-9}
 \end{dmath*}
 \section{Internal consistency}
 \begin{itemize}
@@ -751,6 +762,7 @@
 \item \texttt{PASA\_SAFETY\_REQUIREMENTS}: \textsc{sat}
 \item \texttt{AIRPLANE\_ASSUMPTIONS}: \textsc{sat}
 \item \texttt{WBS\_SFHA\_ASSUMPTIONS}: \textsc{sat}
+\item \texttt{AIRPLANE\_CATASTROPHIC\_OBJECTIVES}: \textsc{sat}
 \end{itemize}
 \section{Directional entailment}
 \subsection*{\texttt{AIRPLANE\_REQUIREMENTS} entails each \texttt{PASA\_SAFETY\_REQUIREMENTS}}
@@ -809,6 +821,13 @@
 \item \textbf{\texttt{BSCU-011}}: PASS
 \end{itemize}
 \textbf{Summary: 11 passed, 0 failed.}
+\subsection*{\texttt{PSSA\_REQUIREMENTS} entails each \texttt{AIRPLANE\_CATASTROPHIC\_OBJECTIVES}}
+\begin{itemize}
+\item \textbf{\texttt{E.3.11-3}}: FAIL \\
+\textit{text:} The airplane does not satisfy the safety objective for loss of deceleration capability if the probability of loss of both HYD 1 and HYD 2 was not extremely improbable (>1.0E-09). \\
+\textit{witness:} \texttt{catastrophic\_loss\_decel\_threshold=1.0000e-09, p\_loss\_both\_hyd\_per\_flight=1.0041e-09}
+\end{itemize}
+\textbf{Summary: 0 passed, 1 failed.}
 \section{Restatement equivalence}
 \begin{itemize}
 \item \textbf{\texttt{E14-1} $\Leftrightarrow$ \texttt{E28-WBS-ASMP-1}}: EQUIVALENT

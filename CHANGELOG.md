@@ -1,5 +1,28 @@
 # Changelog
 
+## v0.2.1 (2026-05-12)
+
+### Encoding
+
+- New module-level list `COMPOSITION_RELATIONS`, parallel to `UNIT_RELATIONS`, carrying the algebraic relations that govern how per-component failure probabilities compose into joint failure probabilities under the standard's own independence axioms. Two relations declared for the worked example: the product composition of the per-system hydraulic failure probabilities under the independence asserted in `E14-7`, and the catastrophic threshold cited in section E.3.11 paragraph 3 of ARP4754B Appendix E.
+- New collection `AIRPLANE_CATASTROPHIC_OBJECTIVES` at the airplane layer, holding the safety objective for loss of deceleration capability cited in section E.3.11 paragraph 3.
+- One new entailment pair declared, `(PSSA_REQUIREMENTS, AIRPLANE_CATASTROPHIC_OBJECTIVES)`. The same entailment machinery, now run under the extended axiom block, asks whether the per-component bounds entail the airplane-level catastrophic objective.
+
+### New finding
+
+- Finding 4, a compositional gap between the per-system hydraulic bounds in Table E14 of ARP4754B Appendix E and the catastrophic threshold cited in section E.3.11 paragraph 3. Each hydraulic system is bounded at 3.3E-05 per flight, and E14-7 asserts their independence. Under the composition axiom, the joint probability of simultaneous failure reaches 1.089E-09, which exceeds the 1.0E-09 threshold the standard itself cites for the "loss of deceleration capability" safety objective. Surfaced on the pair `(PSSA_REQUIREMENTS, AIRPLANE_CATASTROPHIC_OBJECTIVES)`, with witness state `p_loss_both_hyd_per_flight = 1.0041E-09` sitting in the gap. The architectural mitigation in the standard is the emergency accumulator (`PASA-SR-12`, `S18-ACFT-R-1551`), which breaks the failure chain regardless of the joint probability. The numerical bounds alone do not entail the budget.
+
+### Solver
+
+- `get_axioms` in `solve.py` now concatenates `COMPOSITION_RELATIONS` into the axiom set alongside `UNIT_RELATIONS`. The check functions themselves are unchanged. The compositional check is the existing entailment machinery run under a richer axiom block.
+
+### Writeup
+
+- Intro slide updated to reflect four real defects.
+- New Finding 4 slide between Finding 3 and Implications.
+- Implications slide extended to position Finding 4 as a compositional drift, structurally distinct from the restatement drifts of Findings 1 through 3.
+- Approach section's Axioms subsection extended to describe the two-kind structure of the axiom block, unit relations and composition relations.
+
 ## v0.2 (2026-05-10)
 
 ### Encoding

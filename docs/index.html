@@ -31,7 +31,7 @@
           <h1 class="title">specguard</h1>
           <p class="subtitle">Formal-logic verification of aerospace safety standards</p>
           <p>specguard is a formal verification tool for aerospace safety standards. The development and certification of civil aircraft systems is governed by such standards, which typically run to several hundred pages of English prose and structured tables. ARP4754B, the SAE Recommended Practice for the development of civil aircraft and systems, sits among the most widely adopted of these, and Boeing, Airbus, and COMAC each certify their aircraft against it. Standards of this length and structure are reviewed line by line by human engineers, but they are not historically subject to mechanical formal verification.</p>
-          <p>specguard closes that gap. The requirements of a standard are translated into Z3 constraints by a large language model under a tightly specified prompt, the translation is reviewed by a human for fidelity, and three families of generic logical checks are run against the resulting formal structure. We applied the tool to Appendix E of ARP4754B, the standard's own worked example of a wheel brake system, as a test bench, and it surfaced three real defects. Each defect emerges from the algebra of the encoded constraints rather than from any heuristic that targeted the particular finding.</p>
+          <p>specguard closes that gap. The requirements of a standard are translated into Z3 constraints by a large language model under a tightly specified prompt, the translation is reviewed by a human for fidelity, and three families of generic logical checks are run against the resulting formal structure under an axiom block that carries the algebraic relations the standard implies but does not state inside any individual requirement. We applied the tool to Appendix E of ARP4754B, the standard's own worked example of a wheel brake system, as a test bench, and it surfaced four real defects. Each defect emerges from the algebra of the encoded constraints rather than from any heuristic that targeted the particular finding.</p>
         </div>
         <aside class="intro-aside">
           <figure class="report-frame">
@@ -123,11 +123,17 @@ p_loss_elec_bus_per_flight     = Real("p_loss_elec_bus_per_flight")
 lambda_loss_elec_bus_per_hour  = Real("lambda_loss_elec_bus_per_hour")</code></pre>
 
         <h3>Axioms</h3>
-        <p>The axiom block carries shared algebraic relations the standard relies on but does not state inside any individual requirement. The most consequential of these in ARP4754B Appendix E is the conversion between per-flight probabilities and per-hour failure rates, which is derived from section E.3.3 of the standard, where it is established that flights last on average five hours.</p>
+        <p>The axiom block carries shared algebraic relations the standard relies on but does not state inside any individual requirement. In ARP4754B Appendix E these relations come in two kinds. <code>UNIT_RELATIONS</code> holds the conversion between per-flight probabilities and per-hour failure rates, derived from section E.3.3 of the standard, where flights are established to last on average five hours. <code>COMPOSITION_RELATIONS</code> holds the algebraic relations that govern how per-component failure probabilities compose into joint failure probabilities under the standard's own independence axioms, together with the catastrophic safety threshold the standard cites in narrative form in section E.3.11.</p>
 <pre class="code-block"><code>UNIT_RELATIONS = [
     flight_duration_hours == 5,
     p_loss_elec_bus_per_flight ==
         lambda_loss_elec_bus_per_hour * flight_duration_hours,
+]
+
+COMPOSITION_RELATIONS = [
+    p_loss_both_hyd_per_flight ==
+        p_loss_normal_hyd_equip * p_loss_alt_hyd_equip,
+    catastrophic_loss_decel_threshold == 1.0e-09,
 ]</code></pre>
 
         <h3>Internal consistency</h3>
@@ -159,11 +165,12 @@ b_to_a = entails([b.constraint], a.constraint, axioms)
 equivalent = a_to_b and b_to_a</code></pre>
 
         <h3>Data-driven extension</h3>
-        <p>The solver carries no domain knowledge. Adding a new entailment is a single tuple appended to a list. Adding a new equivalence is a single tuple. Adding a new collection is a new module-level list of <code>Req</code> entries. The same solver code runs in every case, with the requirements file as the single source of what to check. The solver was not modified between the encoding's first version, which surfaced two findings, and its current version, which surfaces three findings across four additional collections.</p>
+        <p>The solver carries no domain knowledge. Adding a new entailment is a single tuple appended to a list. Adding a new equivalence is a single tuple. Adding a new collection is a new module-level list of <code>Req</code> entries. Adding a new axiom class is a new module-level list of Z3 expressions. The same solver code runs in every case, with the requirements file as the single source of what to check. The solver check functions were not modified between the encoding's first version, which surfaced one finding, and v0.2.1, which surfaces four findings across additional collections and an extended axiom block.</p>
 <pre class="code-block"><code>ENTAILMENT_PAIRS = [
     ("AIRPLANE_REQUIREMENTS", "PASA_SAFETY_REQUIREMENTS"),
     ("SPEC_REQUIREMENTS", "PSSA_REQUIREMENTS"),
     ("BSCU_SPEC_REQUIREMENTS", "BSCU_PSSA_REQUIREMENTS"),
+    ("PSSA_REQUIREMENTS", "AIRPLANE_CATASTROPHIC_OBJECTIVES"),
 ]
 
 EQUIVALENCE_MAP = [
@@ -274,10 +281,37 @@ witness: groundspeed_overrun_kt = xyz_overrun_threshold_kt
 
     <section class="slide slide-defect">
       <div class="content">
+        <h2 class="slide-title">Finding 4: a compositional gap between Table E14 and the catastrophic threshold cited in section E.3.11</h2>
+        <p>The fourth finding has a different shape from the first three. Where Findings 1 through 3 each surface a drift between two phrasings of the same claim, Finding 4 surfaces an algebraic gap between per-component bounds set at one layer of analysis and a catastrophic safety threshold cited at another. The check that produces it is the existing entailment machinery, run under the extended axiom block introduced in v0.2.1.</p>
+        <p>Table E14, the safety assessment assumptions block of the WBS Preliminary System Safety Assessment, sets bounds on the per-system failure probabilities of the two hydraulic systems that supply the wheel brake system, together with the independence relation between them:</p>
+        <blockquote>
+          <p><strong>E14-1.</strong> The probability of "Loss of Normal Braking System Hydraulic Equipment" will be less than 3.3E-05 per flight.</p>
+          <p><strong>E14-2.</strong> The probability of "Loss of Alternate Braking System Hydraulic Equipment" will be less than 3.3E-05 per flight.</p>
+          <p><strong>E14-7.</strong> HYD 1 hydraulic system is independent from HYD 2 hydraulic system.</p>
+        </blockquote>
+        <p>Section E.3.11 paragraph 3 of the same appendix, in the narrative on the preliminary aircraft safety assessment, cites a catastrophic threshold for the airplane-level loss of deceleration capability:</p>
+        <blockquote>
+          <p><strong>E.3.11-3.</strong> The airplane does not satisfy the safety objective for loss of deceleration capability if the probability of loss of both HYD 1 and HYD 2 was not extremely improbable (&gt;1.0E-09).</p>
+        </blockquote>
+        <p>Under the independence asserted in E14-7, the joint probability of simultaneous hydraulic loss is the product of the per-system bounds. Encoded as a Z3 axiom in <code>COMPOSITION_RELATIONS</code>, the algebra is:</p>
+        <pre class="logic">P(loss of HYD 1 and HYD 2) = P(loss of HYD 1) × P(loss of HYD 2)
+                            ≤ 3.3E-05 × 3.3E-05
+                            = 1.089E-09</pre>
+        <p>The product 1.089E-09 exceeds the 1.0E-09 threshold cited in section E.3.11 by approximately 8.9 percent. The entailment check on the pair <code>(PSSA_REQUIREMENTS, AIRPLANE_CATASTROPHIC_OBJECTIVES)</code> reports:</p>
+        <pre class="logic">E.3.11-3                              FAIL
+
+witness: catastrophic_loss_decel_threshold = 1.0000e-09
+         p_loss_both_hyd_per_flight       = 1.0041e-09</pre>
+        <p>The witness sits in the gap. The per-component bounds, taken at face value, are satisfied. The catastrophic objective is violated. The standard mitigates the gap architecturally: PASA-SR-12 and S18-ACFT-R-1551 introduce the emergency accumulator, which provides a hydraulic backup path that breaks the failure chain regardless of the joint probability of HYD 1 and HYD 2 loss. The architectural mitigation is necessary precisely because the numerical bounds alone do not satisfy the budget. Surfacing this gap algebraically is what compositional checking is designed to do.</p>
+      </div>
+    </section>
+
+    <section class="slide slide-defect">
+      <div class="content">
         <h2 class="slide-title">Implications</h2>
         <p>The most direct implication of specguard is that an aerospace safety standard can be verified algebraically rather than by exhaustive line-by-line review. The verification cost of a several-hundred-page document drops from hundreds of engineer-hours per revision to a single solver run against a translated requirements file. The translation itself, which previously required a human typing for weeks, is now performed by an LLM in minutes and confirmed by a human in hours. The economics of safety verification therefore shifts substantially. Full algebraic checking becomes feasible at every revision, every release, and every transcription of a claim from one layer of analysis to another.</p>
-        <p>The three findings produced by running specguard against Appendix E of ARP4754B are concrete evidence of what this looks like in practice. Each one is a restatement of the same underlying claim across two parts of the standard, in which the restatement fails to preserve the claim under a transformation that human review does not perform. Finding 1 fails to preserve a biconditional, because only one of its two directions is propagated to the supplier-facing specification. Finding 2 fails to preserve a probability bound, because the unit basis is changed without an accompanying numeric adjustment. Finding 3 fails to preserve a definition, because the boundary inequality is altered between the airplane and system layers of analysis.</p>
-        <p>The shape is structural to layered safety standards rather than incidental to ARP4754B. Aerospace standards in general organise their requirements into a Preliminary System Safety Assessment and a downstream specification across multiple system layers. They mix per-flight probabilities with per-hour failure rates. They restate upstream claims into the contracts against which suppliers build their systems. Each of these conventions creates the surface area on which the kind of restatement drift specguard surfaces becomes possible. The methodology generalises directly to other standards in this domain.</p>
+        <p>The four findings produced by running specguard against Appendix E of ARP4754B are concrete evidence of what this looks like in practice. Findings 1 through 3 share a shape. Each is a restatement of the same underlying claim across two parts of the standard, in which the restatement fails to preserve the claim under a transformation that human review does not perform. Finding 1 fails to preserve a biconditional, because only one of its two directions is propagated to the supplier-facing specification. Finding 2 fails to preserve a probability bound, because the unit basis is changed without an accompanying numeric adjustment. Finding 3 fails to preserve a definition, because the boundary inequality is altered between the airplane and system layers of analysis. Finding 4 has a different shape. It is a compositional drift between the per-component bounds set in the WBS PSSA and the airplane-level catastrophic threshold cited in section E.3.11, where the per-component bounds, taken at face value and composed under the standard's own independence axioms, fail to entail the catastrophic safety objective by a margin of roughly 8.9 percent.</p>
+        <p>The shape is structural to layered safety standards rather than incidental to ARP4754B. Aerospace standards in general organise their requirements into a Preliminary System Safety Assessment and a downstream specification across multiple system layers. They mix per-flight probabilities with per-hour failure rates. They restate upstream claims into the contracts against which suppliers build their systems. They allocate failure-condition budgets from the airplane level downward through component-level bounds. Each of these conventions creates the surface area on which restatement drift of the shape surfaced by Findings 1 through 3, and compositional drift of the shape surfaced by Finding 4, become possible. The methodology generalises directly to other standards in this domain.</p>
       </div>
     </section>
 

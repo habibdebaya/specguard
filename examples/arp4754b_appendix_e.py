@@ -138,6 +138,8 @@ lambda_loss_pedal_per_hour       = Real("lambda_loss_pedal_per_hour")
 
 p_total_loss_decelerate              = Real("p_total_loss_decelerate")
 p_complete_loss_wheel_braking_per_landing = Real("p_complete_loss_wheel_braking_per_landing")
+p_loss_both_hyd_per_flight           = Real("p_loss_both_hyd_per_flight")
+catastrophic_loss_decel_threshold    = Real("catastrophic_loss_decel_threshold")
 
 stopping_distance_ft                 = Real("stopping_distance_ft")
 accumulator_pressure_psi             = Real("accumulator_pressure_psi")
@@ -190,6 +192,12 @@ UNIT_RELATIONS = [
     flight_duration_hours == 5,
     p_loss_elec_bus_per_flight == lambda_loss_elec_bus_per_hour * flight_duration_hours,
     p_loss_pedal_per_flight == lambda_loss_pedal_per_hour * flight_duration_hours,
+]
+
+
+COMPOSITION_RELATIONS = [
+    p_loss_both_hyd_per_flight == p_loss_normal_hyd_equip * p_loss_alt_hyd_equip,
+    catastrophic_loss_decel_threshold == 1.0e-09,
 ]
 
 
@@ -942,10 +950,20 @@ WBS_SFHA_ASSUMPTIONS = [
 ]
 
 
+AIRPLANE_CATASTROPHIC_OBJECTIVES = [
+    Req("E.3.11-3",
+        'The airplane does not satisfy the safety objective for loss of '
+        'deceleration capability if the probability of loss of both HYD 1 and '
+        'HYD 2 was not extremely improbable (>1.0E-09).',
+        p_loss_both_hyd_per_flight <= catastrophic_loss_decel_threshold),
+]
+
+
 ENTAILMENT_PAIRS = [
     ("AIRPLANE_REQUIREMENTS", "PASA_SAFETY_REQUIREMENTS"),
     ("SPEC_REQUIREMENTS", "PSSA_REQUIREMENTS"),
     ("BSCU_SPEC_REQUIREMENTS", "BSCU_PSSA_REQUIREMENTS"),
+    ("PSSA_REQUIREMENTS", "AIRPLANE_CATASTROPHIC_OBJECTIVES"),
 ]
 
 
