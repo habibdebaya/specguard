@@ -1,5 +1,22 @@
 # Changelog
 
+## v0.2.2 (2026-05-21)
+
+### Encoding
+
+- `PASA-ASMP-01` rewritten to use the `xyz_overrun_threshold_kt` symbol rather than the literal value 30, with an explicit pinning conjunct `xyz_overrun_threshold_kt == 30` that captures the standard's narrative derivation of the threshold from `ASMP 3.2.2-1` and `ASMP 3.2.2-6`. The two definitional conjuncts now reference the symbol, so the parameter instantiation is algebraically visible to the solver rather than buried in literals.
+- One new equivalence pair declared, `(PASA-ASMP-01, SASP 1.1-6)`, surfacing the parameter-pinning sharpening of the strict-versus-non-strict drift that Finding 3 captures abstractly.
+
+### New finding
+
+- Finding 5, a parameter-instantiation contradiction across the AFHA, PASA, and SFHA layers of ARP4754B Appendix E. The AFHA introduces a parametric threshold `XYZ` in `ASMP 3.2.2-1` with the strict comparison "above". The PASA narratively pins the parameter at 30 in `PASA-ASMP-01`, with reference to `ASMP 3.2.2-1` and `ASMP 3.2.2-6`. The SFHA restates the high-speed-overrun definition with the non-strict comparison "at or above" in `SASP 1.1-6`. Read together with the parameter pinned, the PASA and SFHA disagree at exactly 30 knots. Surfaced on the pair `(PASA-ASMP-01, SASP 1.1-6)`, with witness state `groundspeed_overrun_kt = 30`, `xyz_overrun_threshold_kt = 30`, `high_speed_overrun = False`. The shape sits in the same family as Findings 1 through 3, sharpened by the concrete instantiation of the parameter and by the involvement of three layers of the analysis rather than two.
+
+### Writeup
+
+- Intro slide updated to reflect five real defects.
+- New Finding 5 slide between Finding 4 and Implications.
+- Implications slide extended to position Finding 5 as a parameter-instantiation sharpening of Finding 3, structurally adjacent to the restatement drifts of Findings 1 through 3.
+
 ## v0.2.1 (2026-05-12)
 
 ### Encoding

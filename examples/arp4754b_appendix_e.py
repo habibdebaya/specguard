@@ -872,8 +872,9 @@ AIRPLANE_ASSUMPTIONS = [
     Req("PASA-ASMP-01",
         "It is assumed that the high speed overrun is above 30 knots and low speed overrun is below (or equal) 30 knots. This assumption has been derived from the AFHA assumption ASMP 3.2.2-1 and ASMP 3.2.2-6 for the establishment of the criteria and terms of \"high-speed overrun\" and \"low speed overrun.\"",
         And(
-            high_speed_overrun == (groundspeed_overrun_kt > 30),
-            low_speed_overrun == (groundspeed_overrun_kt <= 30),
+            xyz_overrun_threshold_kt == 30,
+            high_speed_overrun == (groundspeed_overrun_kt > xyz_overrun_threshold_kt),
+            low_speed_overrun == (groundspeed_overrun_kt <= xyz_overrun_threshold_kt),
         )),
 
     Req("PASA-ASMP-02",
@@ -979,4 +980,6 @@ EQUIVALENCE_MAP = [
     ("ASMP 3.2.2-6", "SASP 1.1-5"),
     ("ASMP 3.2.2-8", "SASP 1.1-8"),
     ("ASMP 3.2.2-1", "SASP 1.1-6"),
+
+    ("PASA-ASMP-01", "SASP 1.1-6"),
 ]

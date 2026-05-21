@@ -658,7 +658,7 @@
 \end{dmath*}
 \noindent\textbf{\texttt{PASA-ASMP-01}}\quad It is assumed that the high speed overrun is above 30 knots and low speed overrun is below (or equal) 30 knots. This assumption has been derived from the AFHA assumption ASMP 3.2.2-1 and ASMP 3.2.2-6 for the establishment of the criteria and terms of "high-speed overrun" and "low speed overrun."
 \begin{dmath*}
-(\text{high\_speed\_overrun} = \text{groundspeed\_overrun\_kt} > 30 \wedge \text{low\_speed\_overrun} = \text{groundspeed\_overrun\_kt} \leq 30)
+(\text{xyz\_overrun\_threshold\_kt} = 30 \wedge \text{high\_speed\_overrun} = \text{groundspeed\_overrun\_kt} > \text{xyz\_overrun\_threshold\_kt} \wedge \text{low\_speed\_overrun} = \text{groundspeed\_overrun\_kt} \leq \text{xyz\_overrun\_threshold\_kt})
 \end{dmath*}
 \noindent\textbf{\texttt{PASA-ASMP-02}}\quad The degraded state of systems considered in the CoFFE analysis has been defined such as half functional capability.
 \begin{dmath*}
@@ -852,6 +852,11 @@
 \texttt{SASP 1.1-6}: Overrunning the runway length at or above "XYZ" knots is considered a high speed overrun. \\
 \texttt{ASMP 3.2.2-1} entails \texttt{SASP 1.1-6}: FAIL; witness: \texttt{high\_speed\_overrun=False, xyz\_overrun\_threshold\_kt=0, groundspeed\_overrun\_kt=0} \\
 \texttt{SASP 1.1-6} entails \texttt{ASMP 3.2.2-1}: PASS
+\item \textbf{\texttt{PASA-ASMP-01} $\Leftrightarrow$ \texttt{SASP 1.1-6}}: NOT EQUIVALENT \\
+\texttt{PASA-ASMP-01}: It is assumed that the high speed overrun is above 30 knots and low speed overrun is below (or equal) 30 knots. This assumption has been derived from the AFHA assumption ASMP 3.2.2-1 and ASMP 3.2.2-6 for the establishment of the criteria and terms of "high-speed overrun" and "low speed overrun." \\
+\texttt{SASP 1.1-6}: Overrunning the runway length at or above "XYZ" knots is considered a high speed overrun. \\
+\texttt{PASA-ASMP-01} entails \texttt{SASP 1.1-6}: FAIL; witness: \texttt{high\_speed\_overrun=False, xyz\_overrun\_threshold\_kt=30, groundspeed\_overrun\_kt=30} \\
+\texttt{SASP 1.1-6} entails \texttt{PASA-ASMP-01}: FAIL; witness: \texttt{xyz\_overrun\_threshold\_kt=0, groundspeed\_overrun\_kt=-1, low\_speed\_overrun=True, high\_speed\_overrun=False}
 \end{itemize}
-\textbf{Summary: 7 equivalent, 3 not equivalent.}
+\textbf{Summary: 7 equivalent, 4 not equivalent.}
 \end{document}
