@@ -25,7 +25,7 @@ pip install z3-solver
 python solve.py
 ```
 
-The included encoding runs locally without an API key. Results appear in the terminal; detailed TeX output is written to `reports/`. Installing `pdflatex` also enables PDF generation. Generated files are ignored by Git.
+The included encoding runs locally without an API key. Results appear in the terminal; detailed TeX output is written to `reports/`. Installing `pdflatex` also enables PDF generation.
 
 For another reviewed encoding:
 
