@@ -2,419 +2,261 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>specguard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>specguard | Checking whether written requirements agree</title>
+  <meta name="description" content="A concise technical report on using LLM-assisted encoding and Z3 to examine 176 requirements and assumptions in an aircraft wheel brake system example.">
+  <meta name="theme-color" content="#f7f6f2">
   <link rel="icon" type="image/svg+xml" href="icons/favicon.svg">
   <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="canonical" href="https://habibdebaya.github.io/specguard/">
   <link rel="stylesheet" href="style.css">
+  <script src="script.js" defer></script>
 </head>
 <body>
-  <nav class="slide-nav" aria-label="Slide navigation">
-    <button class="nav-up" type="button" aria-label="Previous slide" disabled>
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <polyline points="18 15 12 9 6 15"></polyline>
-      </svg>
-    </button>
-    <button class="nav-down" type="button" aria-label="Next slide">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <polyline points="6 9 12 15 18 9"></polyline>
-      </svg>
-    </button>
-  </nav>
-  <main>
+  <a class="skip-link" href="#report">Skip to report</a>
+  <header class="masthead page-width">
+    <a class="wordmark" href="#report"><img src="icons/favicon.svg" width="25" height="25" alt="">specguard</a>
+    <span class="masthead-label">Technical report</span>
+    <a class="repo-link" href="https://github.com/habibdebaya/specguard">Repo <span aria-hidden="true">↗</span></a>
+  </header>
 
-    <section class="slide slide-intro">
-      <div class="content intro-grid">
-        <div class="intro-prose">
-          <h1 class="title">specguard</h1>
-          <p class="subtitle">Formal-logic verification of aerospace safety standards</p>
-          <p>specguard is a formal verification tool for aerospace safety standards. The development and certification of civil aircraft systems is governed by such standards, which typically run to several hundred pages of English prose and structured tables. ARP4754B, the SAE Recommended Practice for the development of civil aircraft and systems, sits among the most widely adopted of these, and Boeing, Airbus, and COMAC each certify their aircraft against it. Standards of this length and structure are reviewed line by line by human engineers, but they are not historically subject to mechanical formal verification.</p>
-          <p>specguard closes that gap. The requirements of a standard are translated into Z3 constraints by a large language model under a tightly specified prompt, the translation is reviewed by a human for fidelity, and three families of generic logical checks are run against the resulting formal structure under an axiom block that carries the algebraic relations the standard implies but does not state inside any individual requirement. We applied the tool to Appendix E of ARP4754B, the standard's own worked example of a wheel brake system, as a test bench, and it surfaced five real defects. Each defect emerges from the algebra of the encoded constraints rather than from any heuristic that targeted the particular finding.</p>
+  <main id="report" class="page-width">
+    <article aria-labelledby="report-title">
+      <header class="report-header">
+        <p class="eyebrow">Requirements analysis <span aria-hidden="true">/</span> Python · Z3</p>
+        <h1 id="report-title">Checking whether<br class="desktop-break"> written requirements agree.</h1>
+        <p class="subtitle">A case study of the ARP4754B wheel brake system example</p>
+        <div class="abstract prose">
+          <p><span class="abstract-label">Abstract.</span> Technical requirements are repeated across analyses, specifications, and assumption catalogues. Small changes can alter what they require. specguard combines LLM-assisted translation, human review, and a logic solver to check those relationships. Applied to 176 encoded requirements and assumptions in an aircraft wheel brake example, it produces concrete counterexamples: situations allowed by one formulation that violate another. This report examines five cases involving a missing control condition, changed units, boundary differences, and component probability bounds. The results expose differences in the formal model; their interpretation depends on the source context and modelling assumptions.</p>
         </div>
-        <aside class="intro-aside">
-          <figure class="report-frame">
-            <iframe src="reports/arp4754b_appendix_e.pdf#view=FitH" title="specguard report"></iframe>
-            <figcaption>Generated report (20 pp). <a href="reports/arp4754b_appendix_e.pdf">Open</a></figcaption>
-          </figure>
-          <figure class="code-frame">
-<pre><code><span class="id">PSSA_REQUIREMENTS</span> = [
-    Req(<span class="s">"E13-6"</span>,
-        <span class="s">'When "HYD 1 Enable" output is enabled, '</span>
-        <span class="s">'then "Alt/Emer Ctrl" output shall be disabled'</span>,
-        Implies(hyd1_enable_on, Not(alt_emer_ctrl_on))),
+        <p class="report-meta">ARP4754B, Appendix E <span aria-hidden="true">·</span> 5–7 minute read <span aria-hidden="true">·</span> <a href="#reproduce">Reproducible example</a></p>
+      </header>
 
-    Req(<span class="s">"E13-7"</span>,
-        <span class="s">'When "HYD 1 Enable" output is disabled, '</span>
-        <span class="s">'then "Alt/Emer Ctrl" output shall be enabled'</span>,
-        Implies(Not(hyd1_enable_on), alt_emer_ctrl_on)),
-]
+      <nav class="contents" aria-label="Report sections">
+        <a href="#problem">Problem</a>
+        <a href="#approach">Approach</a>
+        <a href="#findings">Findings</a>
+        <a href="#discussion">Discussion</a>
+        <a href="#reproduce">Reproduce</a>
+      </nav>
 
-<span class="id">UNIT_RELATIONS</span> = [
-    flight_duration_hours == 5,
-    p_loss_elec_bus_per_flight ==
-        lambda_loss_elec_bus_per_hour
-        * flight_duration_hours,
-]</code></pre>
-            <figcaption>Encoding excerpt. <a href="https://github.com/habibdebaya/specguard">Source</a></figcaption>
-          </figure>
-        </aside>
-      </div>
-    </section>
+      <section id="problem" class="report-section" aria-labelledby="problem-title">
+        <h2 id="problem-title">The problem</h2>
+        <div class="prose">
+          <p>A safety analysis establishes obligations that later specifications must preserve. Each statement can read sensibly in isolation while the relationship between them changes.</p>
+          <p>For example, an earlier brake-system requirement says that when one control signal is off, the other must be on. A later specification omits that condition. Both signals being off becomes a counterexample: a state the later specification permits and the earlier requirement forbids.</p>
+          <p>ARP4754B’s Appendix E traces a wheel brake system through aircraft, system, and controller development. Its linked requirements provide a worked example for checking this kind of drift.</p>
+        </div>
+      </section>
 
-    <section class="slide slide-defect">
-      <div class="content">
-        <h2 class="slide-title">Motivation</h2>
-        <p>A document of 172 pages, structured into many overlapping tables and refined across multiple revisions, can contain logical defects that survive even an exhaustive human review. The table of contents below gives a sense of the surface area against which review must hold.</p>
-        <div class="toc-slideshow">
-          <div class="toc-frame">
-            <figure class="toc-slide active">
-              <img src="figures/toc_1.png" alt="ARP4754B table of contents, page 1 of 3, sections 1 through 4.3.">
-            </figure>
-            <figure class="toc-slide">
-              <img src="figures/toc_2.png" alt="ARP4754B table of contents, page 2 of 3, sections 4.4 through 6.2.">
-            </figure>
-            <figure class="toc-slide">
-              <img src="figures/toc_3.png" alt="ARP4754B table of contents, page 3 of 3, with appendices, figures and tables.">
-            </figure>
+      <section id="approach" class="report-section" aria-labelledby="approach-title">
+        <h2 id="approach-title">From prose to a checkable model</h2>
+        <figure class="pipeline">
+          <ol>
+            <li><strong>Source</strong><span>Requirements and identifiers</span></li>
+            <li><strong>Encode</strong><span>LLM drafts logical constraints</span></li>
+            <li><strong>Review</strong><span>Human checks the translation</span></li>
+            <li><strong>Solve</strong><span>Z3 checks declared relations</span></li>
+            <li><strong>Inspect</strong><span>Results and counterexamples</span></li>
+          </ol>
+          <figcaption>The LLM drafts the model; verification operates on the reviewed constraints.</figcaption>
+        </figure>
+        <div class="prose">
+          <p>The encoding retains each identifier and source statement beside its constraint. Shared symbols connect the same concepts across tables. Separate quantities represent different units; explicit axioms relate them. The solver reads the collections and comparison pairs from this encoding.</p>
+        </div>
+        <figure class="encoding-example">
+          <div><span class="small-label">A requirement in English</span><p>When normal control is off,<br>alternate control must be on.</p></div>
+          <span class="encoding-arrow" aria-hidden="true">→</span>
+          <div><span class="small-label">Its logical constraint</span><p class="equation">¬H ⇒ A</p><p class="notation">H: normal control on · A: alternate control on</p></div>
+          <figcaption>A simplified reading of requirement E13-7.</figcaption>
+        </figure>
+        <dl class="check-types">
+          <div><dt>Consistency</dt><dd>Can all requirements in a collection hold together?</dd></div>
+          <div><dt>Entailment</dt><dd>Does a specification guarantee an earlier obligation?</dd></div>
+          <div><dt>Equivalence</dt><dd>Do two restatements impose the same obligation?</dd></div>
+        </dl>
+        <p class="prose">For entailment, Z3 asks whether <span class="inline-equation">A ∧ S ∧ ¬R</span> is satisfiable: assumptions <em>A</em> and specification <em>S</em> hold while requirement <em>R</em> fails. A satisfying assignment supplies the counterexample. Equivalence checks both directions.</p>
+      </section>
+
+      <section id="findings" class="report-section" aria-labelledby="findings-title">
+        <h2 id="findings-title">Findings</h2>
+        <p class="prose">The current encoding contains 176 records in 11 collections, with five shared axioms. All collections are individually consistent; differences emerge in the declared comparisons.</p>
+        <table class="results-table">
+          <caption>Run summary <span>· Z3 4.16.0</span></caption>
+          <thead><tr><th scope="col">Check</th><th scope="col">Result</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">Internal consistency</th><td>11 / 11 collections satisfiable</td></tr>
+            <tr><th scope="row">Directional entailment</th><td>32 / 37 target obligations entailed</td></tr>
+            <tr><th scope="row">Restatement equivalence</th><td>7 / 11 pairs equivalent</td></tr>
+          </tbody>
+        </table>
+        <p class="prose results-note">The cases below interpret these results. The unit mismatch covers two restatement pairs; the 30-knot finding develops the symbolic boundary difference. Three further entailment failures concern assumptions allocated outside the wheel brake system. <a href="#allocation-note">Allocation context ↓</a></p>
+
+        <div class="findings-browser" id="findings-browser">
+          <nav class="finding-index" aria-label="Choose a finding">
+            <a href="#finding-1"><strong>Missing condition</strong><small>Both controls can be off</small></a>
+            <a href="#finding-2"><strong>Changed units</strong><small>The same number, a weaker bound</small></a>
+            <a href="#finding-3"><strong>Changed boundary</strong><small>“Above” becomes “at or above”</small></a>
+            <a href="#finding-4"><strong>Probability gap</strong><small>Joint loss can exceed the target</small></a>
+            <a href="#finding-5"><strong>Boundary at 30 knots</strong><small>The boundary with a fixed threshold</small></a>
+          </nav>
+          <div class="finding-toolbar" hidden>
+            <button class="view-toggle" type="button" aria-pressed="false" aria-controls="findings-track">Read all findings</button>
+            <div class="paging">
+              <span class="finding-announcement" aria-live="polite" aria-atomic="true"></span>
+              <button class="previous-finding" type="button" aria-label="Previous finding" aria-controls="findings-track">←</button>
+              <button class="next-finding" type="button" aria-label="Next finding" aria-controls="findings-track">→</button>
+            </div>
           </div>
-          <div class="toc-controls">
-            <button class="toc-prev" type="button" aria-label="Previous page" disabled>&lsaquo;</button>
-            <span class="toc-counter" aria-live="polite">1 / 3</span>
-            <button class="toc-next" type="button" aria-label="Next page">&rsaquo;</button>
+          <div class="findings-track" id="findings-track">
+            <section class="finding" id="finding-1" aria-labelledby="finding-1-title">
+              <p class="finding-kind">Entailment</p>
+              <h3 id="finding-1-title">A control obligation disappears.</h3>
+              <p>Table E13 requires the two control signals to have opposite states. Table E19 preserves the obligation to disable alternate control when normal control is on. It omits E13-7, which requires alternate control to be on when normal control is off.</p>
+              <figure class="finding-visual">
+                <div class="rule-pair"><p><span>Earlier requirements</span><strong>H ⇒ ¬A <span class="rule-join">and</span> ¬H ⇒ A</strong></p><p><span>Later specification</span><strong>H ⇒ ¬A</strong></p></div>
+                <table class="state-table">
+                  <caption>Counterexample: H = off, A = off</caption>
+                  <thead><tr><th scope="col">State</th><th scope="col">Earlier requirements</th><th scope="col">Later specification</th></tr></thead>
+                  <tbody><tr><th scope="row">Both controls off</th><td class="difference">Forbidden</td><td>Permitted</td></tr></tbody>
+                </table>
+                <figcaption>H = HYD 1 Enable; A = Alt/Emer Ctrl. The absent condition leaves this state unconstrained.</figcaption>
+              </figure>
+              <p>Z3 reproduces this state while satisfying the entire encoded specification. Adding the missing obligation rules it out. The result identifies a gap in the control requirements; establishing the complete system behaviour requires the architectural relationships too.</p>
+              <details class="evidence">
+                <summary>Source evidence <span>Tables E13 and E19</span></summary>
+                <div class="evidence-content">
+                  <p><code>E13-6</code> and <code>E13-7</code> supply both conditions. <code>S18-WBS-R-6109</code> preserves E13-6. The query checks <code>SPEC_REQUIREMENTS</code> against E13-7.</p>
+                  <figure><a href="figures/finding1_1.png"><img src="figures/finding1_1.png" alt="Table E13, rows 6 and 7: enabling HYD 1 disables Alt/Emer Ctrl, and disabling HYD 1 enables Alt/Emer Ctrl."></a><figcaption>Table E13, p. 137. The paired control conditions.</figcaption></figure>
+                  <figure><a href="figures/finding1_2.png"><img src="figures/finding1_2.png" alt="Table E19 lists S18-WBS-R-6109 with the first control condition, followed by the next safety requirement."></a><figcaption>Table E19, p. 144. The final specification carries the first condition.</figcaption></figure>
+                  <p><a href="https://github.com/habibdebaya/specguard/blob/main/examples/arp4754b_appendix_e.py">Inspect the encoding ↗</a></p>
+                </div>
+              </details>
+            </section>
+
+            <section class="finding" id="finding-2" aria-labelledby="finding-2-title">
+              <p class="finding-kind">Equivalence</p>
+              <h3 id="finding-2-title">The unit changes. The number stays.</h3>
+              <p>Table E14 bounds electrical-bus loss at less than 10<sup>−4</sup> per flight. Table E28 repeats the number as a rate per hour. Under the encoded five-hour flight relation, the second formulation allows a per-flight probability five times as large.</p>
+              <figure class="finding-visual">
+                <div class="unit-comparison">
+                  <div><span class="small-label">Table E14</span><strong>&lt; 1 × 10<sup>−4</sup></strong><span>per flight</span></div>
+                  <div class="unit-conversion"><span class="small-label">Table E28 · per hour × 5 hours</span><strong>&lt; 5 × 10<sup>−4</sup></strong><span>per flight, under p = λt</span></div>
+                </div>
+                <figcaption>The identical source numbers produce different bounds on the same quantity.</figcaption>
+              </figure>
+              <p>A witness probability of 4.8828 × 10<sup>−4</sup> per flight satisfies the hourly formulation and violates the original. The same mismatch affects the pedal-input assumption. The earlier bound entails the later one; the reverse fails. An adjusted hourly bound of 2 × 10<sup>−5</sup> restores equivalence under this model.</p>
+              <details class="evidence">
+                <summary>Source evidence <span>Tables E14 and E28</span></summary>
+                <div class="evidence-content">
+                  <p>The pairs are <code>E14-4 / E28-WBS-ASMP-4</code> and <code>E14-5 / E28-WBS-ASMP-5</code>. Section E.3.3, p. 108, supplies an average flight duration of five hours. The encoding uses the linear approximation <em>p = λt</em> as an exact solver axiom.</p>
+                  <figure><a href="figures/finding2_1.png"><img src="figures/finding2_1.png" alt="Table E14, rows 4 and 5, bounds electrical-bus and brake-pedal input loss per flight."></a><figcaption>Table E14, p. 137. Both bounds use a per-flight basis.</figcaption></figure>
+                  <figure><a href="figures/finding2_2.png"><img src="figures/finding2_2.png" alt="Table E28, WBS PSSA assumptions 4 and 5, repeats the same numeric bounds per hour of flight."></a><figcaption>Table E28, p. 158. The restatements use a per-hour basis.</figcaption></figure>
+                </div>
+              </details>
+            </section>
+
+            <section class="finding" id="finding-3" aria-labelledby="finding-3-title">
+              <p class="finding-kind">Equivalence</p>
+              <h3 id="finding-3-title">One word changes the boundary.</h3>
+              <p>The aircraft-level assumption describes an overrun “above XYZ” knots as high-speed. The system-level restatement says “at or above XYZ.” At exactly the threshold, the earlier implication permits a false high-speed flag; the later implication requires it to be true.</p>
+              <figure class="finding-visual boundary-visual">
+                <svg viewBox="0 0 620 205" role="img" aria-labelledby="boundary-title boundary-desc">
+                  <title id="boundary-title">Different obligations at the same threshold</title>
+                  <desc id="boundary-desc">The earlier requirement has an open boundary at XYZ; the later requirement includes XYZ. Both require a high-speed flag above the threshold.</desc>
+                  <line class="boundary-guide" x1="325" y1="22" x2="325" y2="161"></line>
+                  <text x="18" y="54">Earlier: v &gt; XYZ</text><line class="axis" x1="230" y1="50" x2="584" y2="50"></line><line class="required-range" x1="334" y1="50" x2="584" y2="50"></line><circle class="open-point" cx="325" cy="50" r="8"></circle>
+                  <text x="18" y="117">Later: v ≥ XYZ</text><line class="axis" x1="230" y1="113" x2="584" y2="113"></line><line class="required-range" x1="325" y1="113" x2="584" y2="113"></line><circle class="closed-point" cx="325" cy="113" r="8"></circle>
+                  <text x="325" y="180" text-anchor="middle">XYZ</text><text x="483" y="180" text-anchor="middle">Flag required →</text>
+                </svg>
+                <figcaption>At v = XYZ, high-speed = false is permitted only by the earlier implication.</figcaption>
+              </figure>
+              <p>The check therefore fails in one direction. This demonstrates unequal obligations at the boundary; the implications can still hold together elsewhere. The threshold remains symbolic in this comparison. <a href="#finding-5">The 30-knot finding</a> follows the same issue to the concrete value assigned in another layer.</p>
+              <details class="evidence">
+                <summary>Source evidence <span>Tables E2 and E10</span></summary>
+                <div class="evidence-content">
+                  <p><code>ASMP 3.2.2-1</code> encodes <code>v &gt; XYZ ⇒ high_speed</code>; <code>SASP 1.1-6</code> encodes <code>v ≥ XYZ ⇒ high_speed</code>. The solver's default witness sets v and XYZ to zero, with the high-speed flag false. The same boundary difference holds at positive threshold values.</p>
+                  <figure><a href="figures/finding3_1.png"><img src="figures/finding3_1.png" alt="Table E2, ASMP 3.2.2-1: overrunning the runway above XYZ knots is considered a high-speed overrun."></a><figcaption>Table E2, p. 112. The aircraft-level assumption uses “above.”</figcaption></figure>
+                  <figure><a href="figures/finding3_2.png"><img src="figures/finding3_2.png" alt="Table E10, SASP 1.1-6: overrunning the runway at or above XYZ knots is considered a high-speed overrun."></a><figcaption>Table E10, p. 128. The system-level assumption includes equality.</figcaption></figure>
+                </div>
+              </details>
+            </section>
+
+            <section class="finding" id="finding-4" aria-labelledby="finding-4-title">
+              <p class="finding-kind">Entailment under composition</p>
+              <h3 id="finding-4-title">Component bounds leave a numerical gap.</h3>
+              <p>Table E14 bounds each hydraulic failure probability below 3.3 × 10<sup>−5</sup> per flight. Under the independence product axiom, those bounds alone permit joint loss above the 10<sup>−9</sup> target cited in section E.3.11.</p>
+              <figure class="finding-visual probability-visual">
+                <div class="probability-inputs"><p><span>HYD 1 loss</span><strong>3.2 × 10<sup>−5</sup></strong></p><span class="multiply" aria-hidden="true">×</span><p><span>HYD 2 loss</span><strong>3.2 × 10<sup>−5</sup></strong></p></div>
+                <div class="probability-result"><span>Joint loss per flight</span><strong>1.024 × 10<sup>−9</sup> <span class="difference">&gt;</span> 1 × 10<sup>−9</sup></strong><span>Valid component probabilities · joint target exceeded</span></div>
+                <figcaption>An illustrative counterexample, verified with probability values constrained between zero and one.</figcaption>
+              </figure>
+              <p>The default solver witness is 1.0041 × 10<sup>−9</sup>. Both examples establish the numerical gap. The source explicitly responds to hydraulic-loss concerns by adding an emergency accumulator. This comparison explains the need for additional architectural protection; the complete architecture requires a richer model.</p>
+              <details class="evidence">
+                <summary>Source evidence <span>Table E14 and § E.3.11</span></summary>
+                <div class="evidence-content">
+                  <p><code>E14-1</code> and <code>E14-2</code> provide the component bounds. <code>COMPOSITION_RELATIONS</code> supplies their product and the target. The check is <code>PSSA_REQUIREMENTS → AIRPLANE_CATASTROPHIC_OBJECTIVES</code>. For valid nonnegative probabilities, the component-bound product approaches 1.089 × 10<sup>−9</sup>, 8.9% above the target.</p>
+                  <figure><a href="figures/finding2_1.png"><img src="figures/finding2_1.png" alt="Table E14, rows 1 and 2 give hydraulic failure bounds below 3.3E-05 per flight; row 7 states independence."></a><figcaption>Table E14, p. 137. Component bounds and the independence statement.</figcaption></figure>
+                  <p>Section E.3.11, p. 119, describes hydraulic-loss and common-cause concerns, followed by the accumulator decision. <code>PASA-SR-12</code> and <code>S18-ACFT-R-1551</code> capture the additional protection.</p>
+                  <figure class="architecture"><div class="architecture-sources"><span>HYD 1</span><span>HYD 2</span><span>Emergency accumulator</span></div><div class="architecture-destination">Wheel brake system</div><figcaption>Schematic of the three hydraulic energy sources. The accumulator provides stored energy when both main supplies are lost; adapted from the role shown in Figure E5, p. 120.</figcaption></figure>
+                  <p>The current Boolean encoding of independence and the missing probability domains need refinement; see <a href="#model-limitations">model limitations</a>. The valid-probability check above confirms that this numerical counterexample survives adding the domains.</p>
+                </div>
+              </details>
+            </section>
+
+            <section class="finding" id="finding-5" aria-labelledby="finding-5-title">
+              <p class="finding-kind">Equivalence · fixed threshold</p>
+              <h3 id="finding-5-title">The disagreement lands at 30 knots.</h3>
+              <p>The aircraft safety assessment fixes XYZ at 30 knots and defines high-speed overrun as strictly above it. Combined with the system assumption’s inclusive boundary, the difference becomes a concrete disagreement at exactly 30 knots.</p>
+              <figure class="finding-visual">
+                <div class="threshold-marker"><span class="small-label">Groundspeed = threshold</span><strong>30 <span>knots</span></strong></div>
+                <div class="rule-pair boundary-verdict"><p><span>Aircraft assessment · v &gt; 30</span><strong>High-speed = false</strong></p><p><span>System assumption · v ≥ 30</span><strong class="difference">High-speed = true</strong></p></div>
+                <figcaption>The fixed threshold makes the related boundary difference explicit across assessment layers.</figcaption>
+              </figure>
+              <p>The encoded pair fails equivalence in both directions. The reverse failure also reflects the aircraft assessment’s stronger constraints: it fixes the parameter and defines both high- and low-speed states. The boundary conflict is specific to 30 knots; the two constraints can hold together at other speeds.</p>
+              <details class="evidence">
+                <summary>Source evidence <span>Tables E9 and E10</span></summary>
+                <div class="evidence-content">
+                  <p><code>PASA-ASMP-01</code> in Table E9, p. 123, sets the threshold to 30 and classifies speeds at or below it as low-speed. It cites the earlier aircraft assumptions. <code>SASP 1.1-6</code> in Table E10, p. 128, retains “at or above.” Both are repeated in the master assumption catalogue, Table E28.</p>
+                  <div class="equation-block"><span>Encoded aircraft assessment</span><p>XYZ = 30<br>high_speed ⇔ v &gt; XYZ<br>low_speed ⇔ v ≤ XYZ</p><span>Encoded system assumption</span><p>v ≥ XYZ ⇒ high_speed</p></div>
+                  <figure><a href="figures/finding3_2.png"><img src="figures/finding3_2.png" alt="Table E10, SASP 1.1-6 uses the inclusive boundary at or above XYZ knots."></a><figcaption>Table E10, p. 128. The inclusive system-level boundary.</figcaption></figure>
+                  <p>The direct witness is v = XYZ = 30 and high_speed = false. A separate check with both constraints and v = 30 is unsatisfiable; with v = 31 it is satisfiable.</p>
+                </div>
+              </details>
+            </section>
           </div>
         </div>
-        <p>Two requirements may share an identifier yet state different obligations. A safety claim stated in one section may be restated elsewhere in a different unit, with the rewrite failing to preserve the original claim's strength. A propositional condition that the analysis treats as a biconditional may have only one of its two directions propagated to the contract against which downstream suppliers build their systems.</p>
-        <p>Each individual statement reads sensibly on its own. The inconsistency emerges only when statements are read together in pairs.</p>
-        <p class="closing"><em>specguard automates that pairing. The remainder of this deck describes how, with Appendix E of ARP4754B as the worked example throughout.</em></p>
-      </div>
-    </section>
+      </section>
 
-    <section class="slide slide-defect">
-      <div class="content">
-        <h2 class="slide-title">Approach</h2>
-        <p>The encoding of a standard begins with a single record per requirement. The record carries the verbatim English text, the standard's own identifier, and a Z3 expression that captures the requirement's logical content. From this small shape the rest of the apparatus follows. Symbols stand for propositions and quantities, an axiom block carries the shared algebraic relations the standard relies on, and three families of generic checks are run against whatever the requirements file declares.</p>
-
-        <h3>Encoding by LLM</h3>
-        <p>The encoding step is the hardest part of the pipeline to automate. It requires reading the natural-language text of a several-hundred-page document and producing, for each numbered requirement, a Z3 expression that captures its logical content. The combination of natural-language understanding and structured output is what large language models are best at, and so specguard delegates the encoding to an LLM under a tightly specified prompt. The prompt sits in <code>prompts/</code> and is the only piece of the pipeline that is domain-aware.</p>
-        <p>The prompt instructs the LLM to make three deliberate passes over the chosen section of the standard. The first pass plans the symbol table, identifying every distinct logical concept that needs a Z3 symbol and choosing between Bool and Real on the basis of the underlying type. The second pass encodes each requirement, pairing the verbatim English of the standard with a Z3 expression that follows the structure of the English faithfully. The third pass cross-references the encoded constraints, identifies pairs of requirements that purport to be restatements of the same claim, and declares them in the equivalence map.</p>
-        <p>The justification for this division of labour is that the three roles of the pipeline are kept separate. The LLM transcribes natural-language text into formal expressions, applying a single consistent encoding convention across hundreds of requirements. The human reviewer confirms that the produced expressions faithfully represent each requirement's intent. The Z3 solver, which is mechanical and well-understood, operates on the resulting formal structure. No single component is trusted to do all three jobs. The separation makes the methodology auditable at each stage. It is also what allows a several-hundred-page standard to be encoded at all, since fully manual encoding would require weeks of expert time per revision.</p>
-        <p>What follows in this section is the encoding produced for Appendix E of ARP4754B, which serves as the worked example throughout the rest of this deck.</p>
-
-        <h3>The data shape</h3>
-        <p>One dataclass holds the three fields. Every requirement throughout the worked example, and every requirement in any standard the tool can encode, appears in this form.</p>
-<pre class="code-block"><code>@dataclass
-class Req:
-    id: str
-    text: str
-    constraint: object
-
-
-Req("E13-7",
-    'When "HYD 1 Enable" output is disabled, '
-    'then "Alt/Emer Ctrl" output shall be enabled',
-    Implies(Not(hyd1_enable_on), alt_emer_ctrl_on))</code></pre>
-
-        <h3>The symbol table</h3>
-        <p>Boolean symbols stand for propositional facts about the system, such as a control output being enabled or a failure event having occurred. Real-valued symbols stand for measured quantities, including probabilities, failure rates, durations, and pressures. Where two requirements name the same physical concept the encoding reuses one symbol. Where the names sound similar but the unit basis differs, distinct symbols are introduced and joined later through axioms.</p>
-<pre class="code-block"><code>hyd1_enable_on                 = Bool("hyd1_enable_on")
-p_loss_elec_bus_per_flight     = Real("p_loss_elec_bus_per_flight")
-lambda_loss_elec_bus_per_hour  = Real("lambda_loss_elec_bus_per_hour")</code></pre>
-
-        <h3>Axioms</h3>
-        <p>The axiom block carries shared algebraic relations the standard relies on but does not state inside any individual requirement. In ARP4754B Appendix E these relations come in two kinds. <code>UNIT_RELATIONS</code> holds the conversion between per-flight probabilities and per-hour failure rates, derived from section E.3.3 of the standard, where flights are established to last on average five hours. <code>COMPOSITION_RELATIONS</code> holds the algebraic relations that govern how per-component failure probabilities compose into joint failure probabilities under the standard's own independence axioms, together with the catastrophic safety threshold the standard cites in narrative form in section E.3.11.</p>
-<pre class="code-block"><code>UNIT_RELATIONS = [
-    flight_duration_hours == 5,
-    p_loss_elec_bus_per_flight ==
-        lambda_loss_elec_bus_per_hour * flight_duration_hours,
-]
-
-COMPOSITION_RELATIONS = [
-    p_loss_both_hyd_per_flight ==
-        p_loss_normal_hyd_equip * p_loss_alt_hyd_equip,
-    catastrophic_loss_decel_threshold == 1.0e-09,
-]</code></pre>
-
-        <h3>Internal consistency</h3>
-        <p>A single collection is internally consistent when its constraints are jointly satisfiable under the axioms. The check loads every constraint and every axiom into one solver and asks whether a model exists. A failure produces an unsat core, which is the minimal subset of constraints that contradict each other.</p>
-<pre class="code-block"><code>s = Solver()
-for ax in axioms:
-    s.add(ax)
-for r in collection:
-    s.assert_and_track(r.constraint, Bool(f"track_{r.id}"))
-result = s.check()</code></pre>
-
-        <h3>Directional entailment</h3>
-        <p>Entailment of one collection by another is checked one requirement at a time. The solver loads the entailer's full set of constraints together with the axioms, then asks whether the negation of the target requirement is satisfiable. If the answer is unsat, the target is entailed. If the answer is sat, the model returned by the solver is the witness state in which the entailer holds and the target fails.</p>
-<pre class="code-block"><code>s = Solver()
-for ax in axioms:
-    s.add(ax)
-for c in entailer_constraints:
-    s.add(c)
-s.add(Not(target_constraint))
-if s.check() == unsat:
-    pass                  # entailed
-else:
-    witness = s.model()   # counterexample</code></pre>
-
-        <h3>Bidirectional equivalence</h3>
-        <p>Two requirements that the standard claims to be restatements of each other are checked by running the entailment procedure in both directions. A pair is equivalent only if both directions hold. When one direction fails, the witness reveals the precise state in which the two formulations disagree.</p>
-<pre class="code-block"><code>a_to_b = entails([a.constraint], b.constraint, axioms)
-b_to_a = entails([b.constraint], a.constraint, axioms)
-equivalent = a_to_b and b_to_a</code></pre>
-
-        <h3>Data-driven extension</h3>
-        <p>The solver carries no domain knowledge. Adding a new entailment is a single tuple appended to a list. Adding a new equivalence is a single tuple. Adding a new collection is a new module-level list of <code>Req</code> entries. Adding a new axiom class is a new module-level list of Z3 expressions. The same solver code runs in every case, with the requirements file as the single source of what to check. The solver check functions were not modified between the encoding's first version, which surfaced one finding, and v0.2.1, which surfaces four findings across additional collections and an extended axiom block.</p>
-<pre class="code-block"><code>ENTAILMENT_PAIRS = [
-    ("AIRPLANE_REQUIREMENTS", "PASA_SAFETY_REQUIREMENTS"),
-    ("SPEC_REQUIREMENTS", "PSSA_REQUIREMENTS"),
-    ("BSCU_SPEC_REQUIREMENTS", "BSCU_PSSA_REQUIREMENTS"),
-    ("PSSA_REQUIREMENTS", "AIRPLANE_CATASTROPHIC_OBJECTIVES"),
-]
-
-EQUIVALENCE_MAP = [
-    ("E14-4", "E28-WBS-ASMP-4"),
-    ("E14-5", "E28-WBS-ASMP-5"),
-    ("ASMP 3.2.2-1", "SASP 1.1-6"),
-    ...
-]</code></pre>
-
-        <h3>Pipeline</h3>
-        <p>Each run produces a typeset report. The encoded requirements appear alongside their Z3 form rendered in proper logical notation. Every check result is laid out, every witness is reported, and every unsat core is listed. The .tex file is compiled to PDF in the same step, so an artefact suitable for inclusion in a certification dossier or a technical paper is produced automatically alongside the textual output.</p>
-      </div>
-    </section>
-
-    <section class="slide slide-defect">
-      <div class="content">
-        <h2 class="slide-title">Finding 1: an asymmetric encoding of a paired conditional</h2>
-        <p>Table E13 of Appendix E, which contains the proposed safety requirements from the WBS Preliminary System Safety Assessment, presents two paired entries that together specify a biconditional relationship between the HYD 1 Enable signal and the Alt/Emer Ctrl signal. At any moment in operation, exactly one of the two control signals is intended to be active, so a working braking path is always available.</p>
-        <blockquote>
-          <p><strong>E13-6.</strong> When "HYD 1 Enable" output is enabled, then "Alt/Emer Ctrl" output shall be disabled.</p>
-          <p><strong>E13-7.</strong> When "HYD 1 Enable" output is disabled, then "Alt/Emer Ctrl" output shall be enabled.</p>
-        </blockquote>
-        <p>In Table E19, the final Wheel Brake System Requirements Specification, only one of these two directions is propagated. Requirement S18-WBS-R-6109 captures E13-6 verbatim, but no requirement in the contract corresponds to the converse direction stated in E13-7.</p>
-        <div class="tables">
-          <figure>
-            <img src="figures/finding1_1.png" alt="Table E13 from page 137 of ARP4754B Appendix E, showing rows 6 and 7 specifying the paired biconditional.">
-            <figcaption>Table E13, p. 137. Rows 6 and 7 specify both directions.</figcaption>
-          </figure>
-          <figure>
-            <img src="figures/finding1_2.png" alt="Excerpt of Table E19 from page 144 showing S18-WBS-R-6109 with only the forward direction.">
-            <figcaption>Table E19, p. 144. S18-WBS-R-6109 carries only the forward direction.</figcaption>
-          </figure>
+      <section id="discussion" class="report-section" aria-labelledby="discussion-title">
+        <h2 id="discussion-title">Interpretation and limits</h2>
+        <div class="prose">
+          <p>The useful output is a traceable counterexample: a specific obligation, the competing constraint, and a state that separates them. Generic checks expose these differences once the meaning and comparison relationships have been encoded.</p>
+          <p id="allocation-note">Source context matters. The additional failures on E14-3, E14-4, and E14-5 concern sensor, power-bus, and pedal-input assumptions. The text following Table E14 assigns these outside the wheel brake system. Their absence from its specification therefore needs allocation context when interpreting the raw failures.</p>
+          <p id="model-limitations">The model also has limits. Probabilities currently lack explicit bounds between zero and one. Some independence statements are encoded as forbidding simultaneous failure; statistical independence allows joint failure. The separate product axiom supplies the numerical relationship in the hydraulic-loss comparison, without linking probabilities to the Boolean failure symbols.</p>
+          <p>Results depend on the translation, selected comparison pairs, and axioms, including the linear rate conversion. This single case study demonstrates useful checks of the encoded requirements. Broader coverage and a complete system safety argument require further modelling and validation.</p>
         </div>
-        <p>The directional entailment check on the pair <code>(SPEC_REQUIREMENTS, PSSA_REQUIREMENTS)</code> reports E13-7 as failing. The witness state Z3 produces is one in which both control signals are simultaneously inactive.</p>
-        <pre class="logic">alt_emer_ctrl_on = False
-hyd1_enable_on   = False</pre>
-        <p>The Preliminary System Safety Assessment forbids this state, but the contract permits it. A supplier building strictly to the contract therefore carries no formal obligation to rule it out, even though the safety analysis identifies it as a state in which braking is unavailable.</p>
-      </div>
-    </section>
+      </section>
 
-    <section class="slide slide-defect">
-      <div class="content">
-        <h2 class="slide-title">Finding 2: a unit mismatch between Tables E14 and E28</h2>
-        <p>Table E14 lists the seven safety assumptions from the WBS Preliminary System Safety Assessment, two of which concern the probabilities of input-loss events:</p>
-        <blockquote>
-          <p><strong>E14-4.</strong> The probability of loss of an airplane electrical power bus will be less than 1.0E-04 per flight.</p>
-        </blockquote>
-        <p>Table E28 is the master assumption catalogue for the entire development effort. It restates the seven WBS PSSA entries with a slight rewording, and for five of these the restatement preserves the original unit basis. For entries 4 and 5 it does not:</p>
-        <blockquote>
-          <p><strong>E28 WBS PSSA ASMP 4.</strong> The failure rate for loss of an airplane electrical power bus will be less than 1.0E-04 per hour of flight.</p>
-        </blockquote>
-        <div class="tables">
-          <figure>
-            <img src="figures/finding2_1.png" alt="Table E14 from page 137, showing seven safety-assessment assumptions with row 4 expressed per flight.">
-            <figcaption>Table E14, p. 137. Row 4 is stated per flight.</figcaption>
-          </figure>
-          <figure>
-            <img src="figures/finding2_2.png" alt="Table E28 WBS PSSA ASMP block from page 158, showing row 4 restated per hour of flight.">
-            <figcaption>Table E28, p. 158. WBS PSSA ASMP 4 is restated per hour of flight.</figcaption>
-          </figure>
+      <section id="reproduce" class="report-section" aria-labelledby="reproduce-title">
+        <h2 id="reproduce-title">Reproduce and inspect</h2>
+        <p class="prose">The included Python encoding runs locally without an LLM API key. Z3 reports the checks and counterexamples; the report generator writes detailed TeX output and a PDF when <code>pdflatex</code> is installed. From the repository root:</p>
+        <pre class="run-command"><code>pip install z3-solver
+python solve.py</code></pre>
+        <div class="source-links">
+          <a href="https://github.com/habibdebaya/specguard/blob/main/examples/arp4754b_appendix_e.py"><strong>Encoded requirements <span aria-hidden="true">↗</span></strong><span>Source statements and formal constraints</span></a>
+          <a href="https://github.com/habibdebaya/specguard/blob/main/solve.py"><strong>Solver <span aria-hidden="true">↗</span></strong><span>Consistency, entailment, and equivalence</span></a>
+          <a href="https://github.com/habibdebaya/specguard/blob/main/prompts/encode.md"><strong>Encoding prompt <span aria-hidden="true">↗</span></strong><span>The three-pass translation workflow</span></a>
         </div>
-        <p>The numeric value is identical at <code>1.0E-04</code>, but the unit basis has changed from a per-flight probability to a per-hour failure rate. Under the five-hour flight averaged in section E.3.3, a per-hour bound of <code>1.0E-04</code> corresponds to a per-flight probability of approximately <code>5.0E-04</code>, which is five times the per-flight bound that Table E14 sets.</p>
-        <p>The two formulations are encoded with distinct symbols, related to one another through the axiom block. The bidirectional equivalence check reports the following:</p>
-        <pre class="logic">E14-4  ⇔  E28-WBS-ASMP-4         NOT EQUIVALENT
-
-E14-4 entails E28-WBS-ASMP-4     PASS
-E28-WBS-ASMP-4 entails E14-4     FAIL
-
-witness: p_loss_elec_bus_per_flight = 4.8828e-04</pre>
-        <p>The witness value sits below <code>5.0e-04</code>, satisfying the per-hour bound, and above <code>1.0e-04</code>, violating the per-flight bound. The two restatements are therefore not equivalent. The same shape repeats for E14-5 and E28 ASMP 5.</p>
-        <p>The asymmetry in the rewrite is the signature of a transcription event. Five of the seven entries were carried through unchanged, while two had their units flipped without an accompanying numeric adjustment. A unit-preserving restatement would have produced two formulations that Z3 could prove equivalent. The actual restatement does not.</p>
-      </div>
-    </section>
-
-    <section class="slide slide-defect">
-      <div class="content">
-        <h2 class="slide-title">Finding 3: a strict-versus-non-strict drift between AFHA and SFHA</h2>
-        <p>Table E2 of Appendix E lists the eight assumptions of the Aircraft Functional Hazard Assessment, which are inputs to the airplane-level safety analysis. Among these is a definition of what constitutes a high-speed runway overrun:</p>
-        <blockquote>
-          <p><strong>ASMP 3.2.2-1.</strong> Overrunning the runway length above "XYZ" knots is considered a high speed overrun.</p>
-        </blockquote>
-        <p>Table E10, the assumption catalogue of the System Functional Hazard Assessment one layer below, restates the same definition with slightly different wording:</p>
-        <blockquote>
-          <p><strong>SASP 1.1-6.</strong> Overrunning the runway length at or above "XYZ" knots is considered a high speed overrun.</p>
-        </blockquote>
-        <div class="tables">
-          <figure>
-            <img src="figures/finding3_1.png" alt="Table E2 from page 112 showing AFHA assumption 3.2.2-1 with the strict 'above' wording.">
-            <figcaption>Table E2, p. 112. AFHA uses "above" (strict).</figcaption>
-          </figure>
-          <figure>
-            <img src="figures/finding3_2.png" alt="Table E10 from page 128 showing SFHA assumption 1.1-6 with the non-strict 'at or above' wording.">
-            <figcaption>Table E10, p. 128. SFHA uses "at or above" (non-strict).</figcaption>
-          </figure>
-        </div>
-        <p>The two statements differ only in the inclusivity of the inequality. The AFHA version uses "above", a strict comparison. The SFHA version uses "at or above", a non-strict comparison. PASA-ASMP-01, which appears later in the standard, fixes the parametric XYZ at 30 knots and uses "above 30" in the strict form, aligning with the AFHA wording.</p>
-        <p>Encoded faithfully with shared symbols for the groundspeed and the threshold, the bidirectional equivalence check on the pair reports the following:</p>
-        <pre class="logic">ASMP 3.2.2-1  ⇔  SASP 1.1-6      NOT EQUIVALENT
-
-ASMP 3.2.2-1 entails SASP 1.1-6  FAIL
-SASP 1.1-6 entails ASMP 3.2.2-1  PASS
-
-witness: groundspeed_overrun_kt = xyz_overrun_threshold_kt
-         high_speed_overrun     = False</pre>
-        <p>The witness state has the groundspeed exactly equal to the threshold. At that boundary the SFHA wording classifies the overrun as high-speed, while the AFHA wording does not. The two restatements of what was intended to be a single definition are therefore not equivalent under the algebra of the encoded constraints. The drift fits the same shape as the unit mismatch above, namely a transcription event between two layers of the analysis, here flipping a single inequality direction rather than a unit basis.</p>
-      </div>
-    </section>
-
-    <section class="slide slide-defect">
-      <div class="content">
-        <h2 class="slide-title">Finding 4: a compositional gap between Table E14 and the catastrophic threshold cited in section E.3.11</h2>
-        <p>The fourth finding has a different shape from the first three. Where Findings 1 through 3 each surface a drift between two phrasings of the same claim, Finding 4 surfaces an algebraic gap between per-component bounds set at one layer of analysis and a catastrophic safety threshold cited at another. The check that produces it is the existing entailment machinery, run under the extended axiom block introduced in v0.2.1.</p>
-        <p>Table E14, the safety assessment assumptions block of the WBS Preliminary System Safety Assessment, sets bounds on the per-system failure probabilities of the two hydraulic systems that supply the wheel brake system, together with the independence relation between them:</p>
-        <blockquote>
-          <p><strong>E14-1.</strong> The probability of "Loss of Normal Braking System Hydraulic Equipment" will be less than 3.3E-05 per flight.</p>
-          <p><strong>E14-2.</strong> The probability of "Loss of Alternate Braking System Hydraulic Equipment" will be less than 3.3E-05 per flight.</p>
-          <p><strong>E14-7.</strong> HYD 1 hydraulic system is independent from HYD 2 hydraulic system.</p>
-        </blockquote>
-        <p>Section E.3.11 paragraph 3 of the same appendix, in the narrative on the preliminary aircraft safety assessment, cites a catastrophic threshold for the airplane-level loss of deceleration capability:</p>
-        <blockquote>
-          <p><strong>E.3.11-3.</strong> The airplane does not satisfy the safety objective for loss of deceleration capability if the probability of loss of both HYD 1 and HYD 2 was not extremely improbable (&gt;1.0E-09).</p>
-        </blockquote>
-        <p>Under the independence asserted in E14-7, the joint probability of simultaneous hydraulic loss is the product of the per-system bounds. Encoded as a Z3 axiom in <code>COMPOSITION_RELATIONS</code>, the algebra is:</p>
-        <pre class="logic">P(loss of HYD 1 and HYD 2) = P(loss of HYD 1) × P(loss of HYD 2)
-                            ≤ 3.3E-05 × 3.3E-05
-                            = 1.089E-09</pre>
-        <p>The product 1.089E-09 exceeds the 1.0E-09 threshold cited in section E.3.11 by approximately 8.9 percent. The entailment check on the pair <code>(PSSA_REQUIREMENTS, AIRPLANE_CATASTROPHIC_OBJECTIVES)</code> reports:</p>
-        <pre class="logic">E.3.11-3                              FAIL
-
-witness: catastrophic_loss_decel_threshold = 1.0000e-09
-         p_loss_both_hyd_per_flight       = 1.0041e-09</pre>
-        <p>The witness sits in the gap. The per-component bounds, taken at face value, are satisfied. The catastrophic objective is violated. The standard mitigates the gap architecturally: PASA-SR-12 and S18-ACFT-R-1551 introduce the emergency accumulator, which provides a hydraulic backup path that breaks the failure chain regardless of the joint probability of HYD 1 and HYD 2 loss. The architectural mitigation is necessary precisely because the numerical bounds alone do not satisfy the budget. Surfacing this gap algebraically is what compositional checking is designed to do.</p>
-      </div>
-    </section>
-
-    <section class="slide slide-defect">
-      <div class="content">
-        <h2 class="slide-title">Finding 5: a parameter-instantiation contradiction across the AFHA, PASA, and SFHA layers</h2>
-        <p>Finding 5 sits in the same family as Finding 3, with the same strict-versus-non-strict shape, sharpened by an instantiation of the parametric threshold that Finding 3 leaves abstract. Where Finding 3 surfaces a boundary disagreement under a parameter <code>XYZ</code> that remains symbolic across the airplane and system layers of the analysis, Finding 5 surfaces a hard contradiction at the concrete value the Preliminary Aircraft Safety Assessment pins for that parameter. Three layers of the analysis are involved rather than two. All three assumptions appear together as adjacent rows in Table E28 of Appendix E, the master assumption catalogue at the WBS level.</p>
-        <p>Table E2 lists the assumptions of the Aircraft Functional Hazard Assessment. The relevant entry introduces the parametric threshold:</p>
-        <blockquote>
-          <p><strong>ASMP 3.2.2-1.</strong> Overrunning the runway length above "XYZ" knots is considered a high speed overrun.</p>
-        </blockquote>
-        <p>Table E9, the airplane-level safety assumption catalogue, includes the contributions of the Preliminary Aircraft Safety Assessment under the <code>PASA-ASMP</code> prefix. The first such entry instantiates the parameter from the AFHA at a concrete value, with reference to the AFHA's strict-above convention and to the taxi-speed assumption that supplies the value:</p>
-        <blockquote>
-          <p><strong>PASA-ASMP-01.</strong> It is assumed that the high speed overrun is above 30 knots and low speed overrun is below (or equal) 30 knots. This assumption has been derived from the AFHA assumption ASMP 3.2.2-1 and ASMP 3.2.2-6 for the establishment of the criteria and terms of "high-speed overrun" and "low speed overrun."</p>
-        </blockquote>
-        <p>Table E10, the assumption catalogue of the System Functional Hazard Assessment one layer below the airplane level, restates the high-speed-overrun definition with the same parametric threshold and the opposite inequality direction:</p>
-        <blockquote>
-          <p><strong>SASP 1.1-6.</strong> Overrunning the runway length at or above "XYZ" knots is considered a high speed overrun.</p>
-        </blockquote>
-        <p>Encoded faithfully, with the PASA pinning <code>xyz_overrun_threshold_kt</code> at 30 and the SFHA carrying the non-strict comparison, the bidirectional equivalence check on the pair reports the following:</p>
-        <pre class="logic">PASA-ASMP-01  &#x21D4;  SASP 1.1-6      NOT EQUIVALENT
-
-PASA-ASMP-01 entails SASP 1.1-6   FAIL
-SASP 1.1-6 entails PASA-ASMP-01   FAIL
-
-witness: groundspeed_overrun_kt      = 30
-         xyz_overrun_threshold_kt    = 30
-         high_speed_overrun          = False</pre>
-        <p>The witness sits at the parameter value the PASA pins. At a groundspeed of exactly 30 knots, the PASA classifies the overrun as low-speed, because its definition reads as strictly above 30. The SFHA classifies the same point as high-speed, because its definition reads as at or above 30. The two cannot both hold, and the encoded check reports the failure in both directions. The reverse direction additionally registers that the SFHA leaves the parameter unconstrained where the PASA pins it.</p>
-        <p>Two features sharpen the finding relative to Finding 3. The parameter is no longer abstract, so the boundary disagreement no longer depends on how the parameter is later instantiated. The contradiction spans three layers of the same standard, and all three assumptions appear as separate rows in the WBS-level master catalogue, communicating jointly inconsistent definitions to the downstream development effort.</p>
-      </div>
-    </section>
-
-    <section class="slide slide-defect">
-      <div class="content">
-        <h2 class="slide-title">Implications</h2>
-        <p>The most direct implication of specguard is that an aerospace safety standard can be verified algebraically rather than by exhaustive line-by-line review. The verification cost of a several-hundred-page document drops from hundreds of engineer-hours per revision to a single solver run against a translated requirements file. The translation itself, which previously required a human typing for weeks, is now performed by an LLM in minutes and confirmed by a human in hours. The economics of safety verification therefore shifts substantially. Full algebraic checking becomes feasible at every revision, every release, and every transcription of a claim from one layer of analysis to another.</p>
-        <p>The five findings produced by running specguard against Appendix E of ARP4754B are concrete evidence of what this looks like in practice. Findings 1 through 3 and Finding 5 share a shape. Each is a restatement of the same underlying claim across two or more parts of the standard, in which the restatement fails to preserve the claim under a transformation that human review does not perform. Finding 1 fails to preserve a biconditional, because only one of its two directions is propagated to the supplier-facing specification. Finding 2 fails to preserve a probability bound, because the unit basis is changed without an accompanying numeric adjustment. Finding 3 fails to preserve a definition, because the boundary inequality is altered between the airplane and system layers of analysis. Finding 5 sharpens Finding 3 by tracing the same definitional drift through a third layer that pins the parametric threshold at a concrete value, turning the boundary disagreement into a hard contradiction at a known groundspeed. Finding 4 has a different shape. It is a compositional drift between the per-component bounds set in the WBS PSSA and the airplane-level catastrophic threshold cited in section E.3.11, where the per-component bounds, taken at face value and composed under the standard's own independence axioms, fail to entail the catastrophic safety objective by a margin of roughly 8.9 percent.</p>
-        <p>The shape is structural to layered safety standards rather than incidental to ARP4754B. Aerospace standards in general organise their requirements into a Preliminary System Safety Assessment and a downstream specification across multiple system layers. They mix per-flight probabilities with per-hour failure rates. They restate upstream claims into the contracts against which suppliers build their systems. They allocate failure-condition budgets from the airplane level downward through component-level bounds. They instantiate parametric thresholds at the layer that pins them concretely while leaving other layers symbolic. Each of these conventions creates the surface area on which restatement drift of the shape surfaced by Findings 1 through 3 and Finding 5, and compositional drift of the shape surfaced by Finding 4, become possible. The methodology generalises directly to other standards in this domain.</p>
-      </div>
-    </section>
-
-    <section class="slide">
-      <div class="content">
-        <h2 class="slide-title">Closing</h2>
-        <p>specguard is the subject of this deck, demonstrated against Appendix E of ARP4754B as the worked example. The methodology is reusable across other layered safety standards, the encoding shape is explicit in the source, and the typeset report and full requirements file are linked below.</p>
-        <p class="source"><a href="https://github.com/habibdebaya/specguard">github.com/habibdebaya/specguard</a></p>
-      </div>
-    </section>
-
+        <p class="reference"><span class="small-label">Primary reference</span>SAE International. <cite>ARP4754B: Guidelines for Development of Civil Aircraft and Systems.</cite> December 2023. Appendix E, “Development Assurance Contiguous Example.” Page references use the standard’s printed pagination. Each case identifies its source tables or sections.</p>
+      </section>
+      <footer class="report-footer">
+        <span>specguard <span aria-hidden="true">/</span> Technical report</span>
+        <div><button class="print-report" type="button" hidden>Print report</button><a href="https://github.com/habibdebaya/specguard">Repo ↗</a><a href="#report">Back to top ↑</a></div>
+      </footer>
+    </article>
   </main>
-
-  <script>
-    (function () {
-      const slides = Array.from(document.querySelectorAll('.slide'));
-      const upBtn = document.querySelector('.nav-up');
-      const downBtn = document.querySelector('.nav-down');
-      let currentIndex = 0;
-
-      function updateButtons() {
-        upBtn.disabled = currentIndex <= 0;
-        downBtn.disabled = currentIndex >= slides.length - 1;
-      }
-
-      function showSlide(index) {
-        if (index < 0 || index >= slides.length) return;
-        slides.forEach((s, i) => {
-          s.classList.toggle('active', i === index);
-          if (i === index) s.scrollTop = 0;
-        });
-        currentIndex = index;
-        updateButtons();
-      }
-
-      upBtn.addEventListener('click', () => showSlide(currentIndex - 1));
-      downBtn.addEventListener('click', () => showSlide(currentIndex + 1));
-
-      document.addEventListener('keydown', (e) => {
-        if (e.key === 'ArrowDown' || e.key === 'PageDown') {
-          e.preventDefault();
-          showSlide(currentIndex + 1);
-        } else if (e.key === 'ArrowUp' || e.key === 'PageUp') {
-          e.preventDefault();
-          showSlide(currentIndex - 1);
-        }
-      });
-
-      showSlide(0);
-    })();
-
-    (function () {
-      const ss = document.querySelector('.toc-slideshow');
-      if (!ss) return;
-      const slides = ss.querySelectorAll('.toc-slide');
-      const prev = ss.querySelector('.toc-prev');
-      const next = ss.querySelector('.toc-next');
-      const counter = ss.querySelector('.toc-counter');
-      let i = 0;
-
-      function show(idx) {
-        if (idx < 0 || idx >= slides.length) return;
-        slides.forEach((s, j) => s.classList.toggle('active', j === idx));
-        counter.textContent = (idx + 1) + ' / ' + slides.length;
-        prev.disabled = idx === 0;
-        next.disabled = idx === slides.length - 1;
-        i = idx;
-      }
-
-      prev.addEventListener('click', (e) => { e.stopPropagation(); show(i - 1); });
-      next.addEventListener('click', (e) => { e.stopPropagation(); show(i + 1); });
-      show(0);
-    })();
-  </script>
 </body>
 </html>

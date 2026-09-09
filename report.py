@@ -258,8 +258,4 @@ def write_report(source_path, collections, axioms, consistency, entailment, equi
     text = render_latex(source_path, collections, axioms, consistency, entailment, equivalence)
     tex_path.write_text(text)
     pdf_path = compile_pdf(tex_path)
-    if pdf_path is not None and pdf_path.name == "arp4754b_appendix_e.pdf":
-        docs_reports = Path(__file__).parent / "docs" / "reports"
-        docs_reports.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(pdf_path, docs_reports / pdf_path.name)
     return tex_path, pdf_path
