@@ -13,9 +13,9 @@
   <link rel="canonical" href="https://habibdebaya.github.io/specguard/">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..700&family=JetBrains+Mono:wght@400;600&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,700..800&family=Inter:wght@400..700&family=JetBrains+Mono:wght@400;600&display=swap">
   <!-- Asset versions are the first 12 SHA-256 characters; update them when an asset changes. -->
-  <link rel="stylesheet" href="style.css?v=a2dfc6daaa62">
+  <link rel="stylesheet" href="style.css?v=c973e8a00225">
   <script src="script.js?v=d09044975a1d" defer></script>
 </head>
 <body>
@@ -35,10 +35,11 @@
 
   <main id="article" class="wrap">
     <article aria-labelledby="title">
-      <h1 id="title">Checking whether written requirements agree</h1>
+      <h1 id="title">Checking aircraft requirements with Z3</h1>
+      <p class="dek">A case study on the ARP4754B wheel brake system</p>
 
       <section id="drift" aria-labelledby="drift-title">
-        <h2 id="drift-title">Aerospace requirements and why they drift</h2>
+        <h2 id="drift-title">Background</h2>
         <p>Before an aircraft is built, engineers write down what it has to do and how safe it has to be. These statements are called requirements. They start with the aircraft as a whole. Then they are broken down into requirements for each system, like the brakes, and then for each part of that system.</p>
         <p>ARP4754B, published by SAE International, is a guideline for this process. Its Appendix E walks through one full example, following a wheel brake system from aircraft-level requirements down to the brake controller. Because each level is written up in its own documents, the same requirement gets restated across safety analyses, specifications and assumption lists. Every restatement is a chance for the meaning to shift. A condition gets dropped, a unit changes from per flight to per hour, or “above” becomes “at or above.” Each version still reads fine on its own, so across hundreds of pages these shifts are easy to miss.</p>
         <p>We built specguard to catch these shifts. It converts each requirement into a precise logical statement. After a manual review, a solver called Z3 compares the statements and finds the exact cases where two versions of a requirement disagree. We ran it on 176 requirements and assumptions from Appendix E. The rest of this article explains how specguard works and walks through one of the problems it found.</p>
@@ -46,7 +47,7 @@
       </section>
 
       <section id="approach" aria-labelledby="approach-title">
-        <h2 id="approach-title">Our approach</h2>
+        <h2 id="approach-title">Method</h2>
         <p>specguard works in three steps. First, it reads a section of the standard and converts each requirement into a logical statement, keeping the requirement’s ID and original text alongside it. Second, the statements go through manual review. Third, the reviewed statements go to Z3, a logic solver that either finds values that make every statement true at once or proves that no such values exist.</p>
         <p>The main check asks whether a later document keeps a rule from an earlier one. Call the earlier rule R and the later document S. specguard asks Z3 one question. Is there any situation where S is followed but R is broken? If the answer is no, the check passes, because following S always means following R. If the answer is yes, the check fails, and Z3 hands back the exact situation where it happens. That situation is called a counterexample. This check only runs in one direction, because the later document is allowed to add detail or be stricter as long as it doesn’t lose the earlier rule.</p>
         <p>Some statements are meant to say exactly the same thing, like a limit copied from one table into another. For those, one direction is not enough. A pass in one direction only shows that the restatement is at least as strict as the original, and it could still be stricter. So specguard runs the check in both directions, and the two statements only mean the same thing if both pass.</p>
@@ -69,7 +70,7 @@
       </section>
 
       <section id="brakes" aria-labelledby="brakes-title">
-        <h2 id="brakes-title">When both brake controls can be off</h2>
+        <h2 id="brakes-title">Worked Example: the brake control gap</h2>
         <p>Across the 176 requirements and assumptions, our analysis found five logical inconsistencies between documents. Here we go through one of them.</p>
         <p>The wheel brake system has two control signals. We will call them N, which turns on the normal brake control, and A, which turns on the alternate brake control. Early in the design, the safety analysis (Table E13, p. 137) requires exactly one of the two to be on at any time. It does this with two rules. The first says that if N is on, A must be off. The second says that if N is off, A must be on.</p>
         <p>Later, the final specification for the brake system (Table E19, p. 144) restates these requirements. It keeps the first rule but leaves out the second.</p>
